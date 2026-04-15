@@ -1,0 +1,13 @@
+#!/bin/bash
+set -euxo pipefail
+
+%{ for user in users ~}
+id -u ${user} >/dev/null 2>&1 || useradd -m -s /bin/bash ${user}
+usermod -aG sudo ${user}
+install -d -m 700 -o ${user} -g ${user} /home/${user}/.ssh
+cat <<'EOF' >/home/${user}/.ssh/authorized_keys
+${ssh_public_key}
+EOF
+chown ${user}:${user} /home/${user}/.ssh/authorized_keys
+chmod 600 /home/${user}/.ssh/authorized_keys
+%{ endfor ~}
