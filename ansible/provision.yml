@@ -1,0 +1,74 @@
+- name: Server Provisioning
+  hosts: servers
+  become: yes
+
+  vars:
+    project_root: "/home/{{ ansible_user }}/app"
+    env_type: "{{ env_type | default('development') }}"
+    enable_ssl: "{{ enable_ssl | default(env_type == 'staging') }}"
+    domain_name: "{{ domain_name | default('') }}"
+
+  tasks:
+    - name: Install dependencies
+      apt:
+        name:
+          - ca-certificates
+          - curl
+          - gnupg
+          - python3-pip
+          - python3-docker
+          - certbot
+        state: present
+        update_cache: yes
+
+    - name: Install Docker
+      shell: |
+        install -m 0755 -d /etc/apt/keyrings
+        curl -fsSL https://download.docker.com/linux/ubuntu/gpg | gpg --dearmor -o /etc/apt/keyrings/docker.gpg --yes
+        chmod a+r /etc/apt/keyrings/docker.gpg
+        echo "deb [arch=$(dpkg --print-architecture)] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable" > /etc/apt/sources.list.d/docker.list
+
+    - name: Install Docker packages
+      apt:
+        name:
+          - docker-ce
+          - docker-ce-cli
+          - containerd.io
+          - docker-compose-plugin
+        state: present
+        update_cache: yes
+
+    - name: Create project directory
+      file:
+        path: "{{ project_root }}"
+        state: directory
+        mode: "0755"
+
+    - name: Check SSL exists
+      stat:
+        path: "/etc/letsencrypt/live/{{ domain_name }}/fullchain.pem"
+      register: ssl
+      when: enable_ssl | bool
+
+    - name: Require domain name when SSL is enabled
+      assert:
+        that:
+          - domain_name | length > 0
+        fail_msg: "domain_name must be provided when enable_ssl=true"
+      when: enable_ssl | bool
+
+    - name: Generate SSL (first time only)
+      shell: |
+        certbot certonly --standalone \
+          -d {{ domain_name }} \
+          --agree-tos --non-interactive --register-unsafely-without-email
+      when:
+        - enable_ssl | bool
+        - not ssl.stat.exists
+
+    - name: Certbot renewal cron
+      cron:
+        name: "certbot renewal"
+        weekday: "1"
+        job: "certbot renew --post-hook 'docker compose restart nginx'"
+      when: enable_ssl | bool
