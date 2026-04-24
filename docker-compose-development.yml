@@ -14,6 +14,10 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     restart: always
     networks:
       - wdoc-network
@@ -26,25 +30,15 @@ services:
       - database.env
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    deploy:
+      resources:
+        limits:
+          memory: 512M
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres} -d $${POSTGRES_DB:-postgres}"]
       interval: 10s
       timeout: 5s
       retries: 5
-    networks:
-      - wdoc-network
-
-  pg_admin:
-    image: dpage/pgadmin4:latest
-    container_name: wdoc-pgadmin
-    restart: always
-    env_file:
-      - pgadmin.env
-    ports:
-      - "8080:80"
-    depends_on:
-      db:
-        condition: service_healthy
     networks:
       - wdoc-network
 
@@ -85,6 +79,11 @@ services:
     environment:
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+
     networks:
       - wdoc-network
 

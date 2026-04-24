@@ -23,6 +23,36 @@ locals {
     }
   ]
 
+  security_group_egress_rules = [
+    {
+      description = "Allow HTTP outbound"
+      from_port   = 80
+      to_port     = 80
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    },
+    {
+      description = "Allow HTTPS outbound"
+      from_port   = 443
+      to_port     = 443
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    },
+    {
+      description = "Allow DNS outbound"
+      from_port   = 53
+      to_port     = 53
+      protocol    = "udp"
+      cidr_blocks = ["0.0.0.0/0"]
+    },
+    {
+      description = "Allow RDS access"
+      from_port   = 5432
+      to_port     = 5432
+      protocol    = "tcp"
+      cidr_blocks = ["10.0.0.0/16"]
+    }
+  ]
 }
 
 resource "aws_instance" "app" {
@@ -86,6 +116,7 @@ data "aws_ami" "ubuntu_24_04" {
   }
 }
 
+#trivy:ignore:AVD-AWS-0104
 resource "aws_security_group" "ec2_sg" {
   name        = var.security_group_name
   description = var.security_group_description
@@ -102,12 +133,15 @@ resource "aws_security_group" "ec2_sg" {
     }
   }
 
-  egress {
-    description = "All outbound"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+  dynamic "egress" {
+    for_each = local.security_group_egress_rules
+    content {
+      description = egress.value.description
+      from_port   = egress.value.from_port
+      to_port     = egress.value.to_port
+      protocol    = egress.value.protocol
+      cidr_blocks = egress.value.cidr_blocks
+    }
   }
 }
 

@@ -9,8 +9,7 @@ output "bucket_arn" {
 }
 
 output "bucket_versioning_enabled" {
-  value       = var.enable_versioning ? aws_s3_bucket_versioning.this[0].versioning_configuration[0].status : "Disabled"
-  description = "Versioning status of the S3 bucket"
+  value = var.enable_versioning ? one(aws_s3_bucket_versioning.this[*].versioning_configuration[0].status) : "Disabled"
 }
 
 output "iam_role_arn" {

@@ -12,7 +12,7 @@ provider "aws" {
 
   default_tags {
     tags = {
-      Environment = "dev"
+      Environment = "staging"
       Project     = "TeamProject225"
     }
   }

@@ -7,8 +7,8 @@ tfplan
 crash.log
 crash.*.log
 
-*.tfvars
-*.tfvars.json
+terraform.tfvars
+terraform.tfvars.json
 
 override.tf
 override.tf.json

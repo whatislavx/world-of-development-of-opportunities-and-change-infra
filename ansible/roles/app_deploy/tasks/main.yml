@@ -1,0 +1,145 @@
+---
+- name: Check if initialized
+  ansible.builtin.stat:
+    path: "{{ project_root }}/.initialized"
+  register: init_marker
+
+- name: Decide deployment mode
+  ansible.builtin.set_fact:
+    actual_mode: "{{ 'init' if not init_marker.stat.exists else deploy_mode }}"
+
+- name: Prepare project directory
+  ansible.builtin.file:
+    path: "{{ project_root }}"
+    state: directory
+    mode: "0755"
+
+- name: Validate staging DB host
+  ansible.builtin.assert:
+    that:
+      - db_host is defined
+      - db_host | length > 0
+    fail_msg: "db_host must be provided for staging deployments"
+  when: env_type == 'staging'
+
+- name: Render environment files
+  ansible.builtin.template:
+    src: "{{ item.src }}"
+    dest: "{{ project_root }}/{{ item.dest }}"
+    mode: "0600"
+  loop: "{{ env_files }}"
+
+- name: Copy infrastructure configs
+  ansible.builtin.copy:
+    src: "../{{ item }}-{{ env_type }}.{{ 'yml' if item == 'docker-compose' else
+      'conf' }}"
+    dest: "{{ project_root }}/{{ 'docker-compose.yml' if item == 'docker-compose'
+      else 'nginx.conf' }}"
+    mode: "0644"
+  loop: [ "docker-compose", "nginx" ]
+
+- name: Initial run
+  block:
+    - name: Docker compose up
+      ansible.builtin.command:
+        cmd: docker compose up -d
+        chdir: "{{ project_root }}"
+
+    - name: Run Django migrations (init)
+      ansible.builtin.command:
+        cmd: docker compose exec -T backend python manage.py migrate
+        chdir: "{{ project_root }}"
+      register: init_migrate_result
+      retries: 6
+      delay: 10
+      until: init_migrate_result.rc == 0
+
+    - name: Create marker
+      ansible.builtin.file:
+        path: "{{ project_root }}/.initialized"
+        state: touch
+  when: actual_mode == 'init'
+
+- name: Update process
+  block:
+    - name: Capture current service container id
+      ansible.builtin.command:
+        cmd: docker compose ps -q {{ service_name }}
+        chdir: "{{ project_root }}"
+      register: service_container_id
+      changed_when: false
+      failed_when: false
+
+    - name: Capture current service image id
+      ansible.builtin.command:
+        cmd: docker inspect --format='{{ '{{.Image}}' }}' {{ service_container_id.stdout
+          }}
+      register: current_image_id
+      changed_when: false
+      when: service_container_id.stdout | length > 0
+
+    - name: Capture configured service image reference
+      ansible.builtin.shell: docker compose config --images {{ service_name }} | head -n1
+      args:
+        chdir: "{{ project_root }}"
+      register: service_image_ref
+      changed_when: false
+
+    - name: Update service with automatic rollback on failure
+      block:
+        - name: Pull and restart service
+          ansible.builtin.shell: |
+            docker compose pull {{ service_name }}
+            docker compose up -d --no-deps --force-recreate {{ service_name }}
+          args:
+            chdir: "{{ project_root }}"
+
+        - name: Run Django migrations (backend update)
+          ansible.builtin.command:
+            cmd: docker compose exec -T backend python manage.py migrate
+            chdir: "{{ project_root }}"
+          register: update_migrate_result
+          retries: 6
+          delay: 10
+          until: update_migrate_result.rc == 0
+          when: service_name == 'backend'
+
+        - name: Update Celery (if backend)
+          ansible.builtin.command:
+            cmd: docker compose up -d --no-deps --force-recreate celery_worker celery_beat
+            chdir: "{{ project_root }}"
+          when: service_name == 'backend'
+
+      rescue:
+        - name: Roll back to previous image tag
+          ansible.builtin.command:
+            cmd: docker tag {{ current_image_id.stdout }} {{ service_image_ref.stdout }}
+          when:
+            - current_image_id is defined
+            - current_image_id.stdout | length > 0
+            - service_image_ref.stdout | length > 0
+
+        - name: Recreate rolled back service
+          ansible.builtin.command:
+            cmd: docker compose up -d --no-deps --force-recreate {{ service_name }}
+            chdir: "{{ project_root }}"
+          when:
+            - current_image_id is defined
+            - current_image_id.stdout | length > 0
+            - service_image_ref.stdout | length > 0
+
+        - name: Recreate Celery after backend rollback
+          ansible.builtin.command:
+            cmd: docker compose up -d --no-deps --force-recreate celery_worker celery_beat
+            chdir: "{{ project_root }}"
+          when:
+            - service_name == 'backend'
+            - current_image_id is defined
+            - current_image_id.stdout | length > 0
+            - service_image_ref.stdout | length > 0
+
+        - name: Fail deployment after rollback
+          ansible.builtin.fail:
+            msg: "Deployment update failed for {{ service_name }}. Automatic rollback was
+              attempted."
+  when: actual_mode == 'update'

@@ -49,6 +49,7 @@ resource "aws_db_instance" "this" {
 
   vpc_security_group_ids = [aws_security_group.rds.id]
   db_subnet_group_name   = aws_db_subnet_group.this.name
+  parameter_group_name   = aws_db_parameter_group.postgres_parameters.name
 
   publicly_accessible = var.publicly_accessible
 
@@ -62,3 +63,36 @@ resource "aws_db_instance" "this" {
     Name = var.name
   }
 }
+
+resource "aws_db_parameter_group" "postgres_parameters" {
+  name   = "${var.name}-params"
+  family = "postgres15"
+
+  parameter {
+    name  = "max_connections"
+    value = "30"
+  }
+
+  parameter {
+    name  = "shared_buffers"
+    value = "{DBInstanceClassMemory/4096}"
+  }
+
+  parameter {
+    name  = "random_page_cost"
+    value = "1.1"
+  }
+
+  parameter {
+    name  = "autovacuum_vacuum_scale_factor"
+    value = "0.05"
+  }
+
+  parameter {
+    name  = "autovacuum_naptime"
+    value = "10"
+  }
+
+  tags = var.tags
+}
+

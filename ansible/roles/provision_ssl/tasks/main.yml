@@ -1,0 +1,29 @@
+- name: Require domain name when SSL is enabled
+  ansible.builtin.assert:
+    that:
+      - domain_name | length > 0
+    fail_msg: domain_name must be provided when enable_ssl=true
+  when: enable_ssl | bool
+
+- name: Check SSL certificate exists
+  ansible.builtin.stat:
+    path: "/etc/letsencrypt/live/{{ domain_name }}/fullchain.pem"
+  register: ssl_certificate
+  when: enable_ssl | bool
+
+- name: Generate SSL certificate for the first time
+  ansible.builtin.command:
+    cmd: >-
+      certbot certonly --standalone
+      -d {{ domain_name }}
+      --agree-tos --non-interactive --register-unsafely-without-email
+  when:
+    - enable_ssl | bool
+    - not ssl_certificate.stat.exists
+
+- name: Configure certbot renewal cron
+  ansible.builtin.cron:
+    name: certbot renewal
+    weekday: "{{ certbot_renew_weekday }}"
+    job: "cd {{ project_root }} && certbot renew --post-hook 'docker compose restart nginx'"
+  when: enable_ssl | bool

@@ -1,5 +1,5 @@
 locals {
-  environment = "dev"
+  environment = "development"
 }
 
 module "network" {
@@ -53,3 +53,14 @@ module "compute" {
   security_group_description = var.security_group_description
 }
 
+
+resource "aws_s3_bucket" "test_drift_bucket" {
+  # Спробуймо використати невалідне ім'я (з великими літерами), 
+  # AWS дозволяє тільки малі літери, цифри та дефіси.
+  bucket = "MY_VERY_WRONG_BUCKET_NAME_TEST_2026" 
+
+  tags = {
+    Name        = "Drift Test"
+    Environment = "Dev"
+  }
+}

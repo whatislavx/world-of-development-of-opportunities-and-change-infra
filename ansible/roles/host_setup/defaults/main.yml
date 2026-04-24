@@ -1,0 +1,25 @@
+project_root: "/home/{{ ansible_user }}/app"
+
+base_packages:
+  - ca-certificates
+  - curl
+  - gnupg
+  - lsb-release
+  - python3-pip
+  - python3-docker
+  - certbot
+
+docker_packages:
+  - docker-ce
+  - docker-ce-cli
+  - containerd.io
+  - docker-compose-plugin
+
+docker_apt_arch_map:
+  x86_64: amd64
+  amd64: amd64
+  aarch64: arm64
+  arm64: arm64
+
+docker_apt_arch: "{{ docker_apt_arch_map.get(ansible_architecture, 'amd64') }}"
+docker_apt_release_channel: stable
