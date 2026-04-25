@@ -19,4 +19,7 @@ nofile_limit: 65535
 
 # Services
 unnecessary_services:
+  - multipathd.service
   - snapd.service
+  - snapd.socket
+  - snapd.seeded.service
