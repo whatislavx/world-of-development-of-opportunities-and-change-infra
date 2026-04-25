@@ -93,7 +93,7 @@ jobs:
                         \"env_type\": \"${{ env.ENVIRONMENT }}\",
                         \"service_name\": \"${{ env.SERVICE }}\",
                         \"deploy_mode\": \"${{ env.DEPLOY_MODE }}\",
-                        \"domain_name\": \"${{ env.ENVIRONMENT == 'staging' && 'staging.mydomain.com' || 'dev.mydomain.com' }}\",
+                        \"domain_name\": \"${{ env.ENVIRONMENT == 'staging' && 'stage-wdoc.pp.ua' || '' }}\",
                         \"dockerhub_user\": \"${{ secrets.DOCKERHUB_USERNAME }}\",
                         \"dockerhub_token\": \"${{ secrets.DOCKERHUB_TOKEN }}\",
                         \"db_name\": \"${{ secrets.DB_NAME }}\",
