@@ -50,4 +50,4 @@ jobs:
                   options: >-
                       -i ansible/inventory.ini --limit staging --extra-vars
                       "env_type=staging enable_ssl=true
-                      domain_name=staging.mydomain.com"
+                      domain_name=stage-wdoc.pp.ua"
