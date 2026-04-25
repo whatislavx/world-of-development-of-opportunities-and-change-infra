@@ -20,4 +20,3 @@ nofile_limit: 65535
 # Services
 unnecessary_services:
   - snapd.service
-  - avahi-daemon.service

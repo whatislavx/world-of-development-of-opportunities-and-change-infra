@@ -17,9 +17,15 @@ variable "public_subnet_cidr" {
 }
 
 variable "private_subnet_cidr" {
-  description = "CIDR block for the staging private subnet"
+  description = "CIDR block for the first staging private subnet"
   type        = string
-  default     = "10.20.2.0/24"
+  default     = "10.20.2.0/28"
+}
+
+variable "private_subnet_cidr_b" {
+  description = "CIDR block for the second staging private subnet"
+  type        = string
+  default     = "10.20.2.16/28"
 }
 
 variable "public_subnet_az" {
@@ -29,9 +35,15 @@ variable "public_subnet_az" {
 }
 
 variable "private_subnet_az" {
-  description = "Availability zone for the staging private subnet"
+  description = "Availability zone for the first staging private subnet"
   type        = string
   default     = "us-east-1b"
+}
+
+variable "private_subnet_az_b" {
+  description = "Availability zone for the second staging private subnet"
+  type        = string
+  default     = "us-east-1a"
 }
 
 variable "vpc_name" {
@@ -108,6 +120,19 @@ variable "key_name" {
 variable "public_key_path" {
   description = "Path to the staging public key file"
   type        = string
+}
+
+
+variable "ec2_users" {
+  description = "Linux users to create on staging EC2"
+  type        = list(string)
+  default     = ["wdoc_ansible_user"]
+}
+
+variable "passwordless_sudo_users" {
+  description = "Linux users that should have passwordless sudo access on staging EC2"
+  type        = list(string)
+  default     = ["wdoc_ansible_user"]
 }
 
 variable "allowed_ssh_cidr" {

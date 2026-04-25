@@ -53,8 +53,6 @@ flowchart TD
     DEPLOY --> FE[Frontend]
     DEPLOY --> BE[Backend]
     DEPLOY --> DB[(PostgreSQL Container)]
-    DEPLOY --> REDIS[Redis]
-    DEPLOY --> CELERY[Celery Worker + Beat]
 ```
 
 ### Staging
@@ -75,8 +73,6 @@ flowchart TD
     DEPLOY --> NGINX[Nginx + TLS]
     DEPLOY --> FE[Frontend]
     DEPLOY --> BE[Backend]
-    DEPLOY --> REDIS[Redis]
-    DEPLOY --> CELERY[Celery Worker + Beat]
 ```
 
 ## Repository Structure
@@ -221,7 +217,6 @@ ansible-playbook ansible/provision.yml \
 - Renders env files and copies environment-specific compose/nginx config.
 - Auto-detects first run (`init`) via `.initialized` marker.
 - Runs Django migrations on init and backend update.
-- Recreates Celery services when backend is updated.
 - Performs automatic rollback when service update fails.
 
 Example deploy:
@@ -263,9 +258,6 @@ Minimum secrets:
 Defined in compose files:
 - `frontend`
 - `backend`
-- `redis`
-- `celery_worker`
-- `celery_beat`
 - `nginx`
 - `db` (development only)
 

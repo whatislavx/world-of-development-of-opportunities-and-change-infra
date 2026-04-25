@@ -27,13 +27,23 @@ resource "aws_subnet" "public" {
   }
 }
 
-resource "aws_subnet" "private" {
+resource "aws_subnet" "private_a" {
   vpc_id            = aws_vpc.main.id
   cidr_block        = var.private_subnet_cidr
   availability_zone = var.private_subnet_az
 
   tags = {
-    Name = var.private_subnet_name
+    Name = "${var.private_subnet_name}-a"
+  }
+}
+
+resource "aws_subnet" "private_b" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = var.private_subnet_cidr_b
+  availability_zone = var.private_subnet_az_b
+
+  tags = {
+    Name = "${var.private_subnet_name}-b"
   }
 }
 

@@ -1,13 +1,18 @@
 #!/bin/bash
-set -euxo pipefail
+set -e
 
 %{ for user in users ~}
-id -u ${user} >/dev/null 2>&1 || useradd -m -s /bin/bash ${user}
-usermod -aG sudo ${user}
-install -d -m 700 -o ${user} -g ${user} /home/${user}/.ssh
-cat <<'EOF' >/home/${user}/.ssh/authorized_keys
+  id -u ${user} >/dev/null 2>&1 || useradd -m -s /bin/bash ${user}
+  usermod -aG sudo ${user}
+  install -d -m 700 -o ${user} -g ${user} /home/${user}/.ssh
+  cat <<'EOF' >/home/${user}/.ssh/authorized_keys
 ${ssh_public_key}
 EOF
-chown ${user}:${user} /home/${user}/.ssh/authorized_keys
-chmod 600 /home/${user}/.ssh/authorized_keys
+  chown ${user}:${user} /home/${user}/.ssh/authorized_keys
+  chmod 600 /home/${user}/.ssh/authorized_keys
+%{ endfor ~}
+
+%{ for user in passwordless_sudo_users ~}
+  echo "${user} ALL=(ALL) NOPASSWD:ALL" >/etc/sudoers.d/${user}
+  chmod 440 /etc/sudoers.d/${user}
 %{ endfor ~}

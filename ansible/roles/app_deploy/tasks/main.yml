@@ -20,7 +20,7 @@
       - db_host is defined
       - db_host | length > 0
     fail_msg: "db_host must be provided for staging deployments"
-  when: env_type == 'staging'
+    when: env_type == 'staging'
 
 - name: Render environment files
   ansible.builtin.template:
@@ -104,12 +104,6 @@
           until: update_migrate_result.rc == 0
           when: service_name == 'backend'
 
-        - name: Update Celery (if backend)
-          ansible.builtin.command:
-            cmd: docker compose up -d --no-deps --force-recreate celery_worker celery_beat
-            chdir: "{{ project_root }}"
-          when: service_name == 'backend'
-
       rescue:
         - name: Roll back to previous image tag
           ansible.builtin.command:
@@ -124,16 +118,6 @@
             cmd: docker compose up -d --no-deps --force-recreate {{ service_name }}
             chdir: "{{ project_root }}"
           when:
-            - current_image_id is defined
-            - current_image_id.stdout | length > 0
-            - service_image_ref.stdout | length > 0
-
-        - name: Recreate Celery after backend rollback
-          ansible.builtin.command:
-            cmd: docker compose up -d --no-deps --force-recreate celery_worker celery_beat
-            chdir: "{{ project_root }}"
-          when:
-            - service_name == 'backend'
             - current_image_id is defined
             - current_image_id.stdout | length > 0
             - service_image_ref.stdout | length > 0

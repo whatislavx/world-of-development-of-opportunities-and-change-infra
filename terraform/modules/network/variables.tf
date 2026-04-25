@@ -34,8 +34,13 @@ variable "public_subnet_cidr" {
 }
 
 variable "private_subnet_cidr" {
-  description = "CIDR block for the private subnet"
+  description = "CIDR block for the first private subnet"
   default     = "10.0.2.0/28"
+}
+
+variable "private_subnet_cidr_b" {
+  description = "CIDR block for the second private subnet"
+  default     = "10.0.3.0/28"
 }
 
 variable "public_subnet_az" {
@@ -44,7 +49,12 @@ variable "public_subnet_az" {
 }
 
 variable "private_subnet_az" {
-  description = "Availability zone for the private subnet"
+  description = "Availability zone for the first private subnet"
+  type        = string
+}
+
+variable "private_subnet_az_b" {
+  description = "Availability zone for the second private subnet"
   type        = string
 }
 

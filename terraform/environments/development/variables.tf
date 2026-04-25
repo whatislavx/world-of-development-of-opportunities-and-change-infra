@@ -22,6 +22,12 @@ variable "private_subnet_cidr" {
   default     = "10.10.2.0/24"
 }
 
+variable "private_subnet_cidr_b" {
+  description = "CIDR block for the second development private subnet"
+  type        = string
+  default     = "10.10.3.0/24"
+}
+
 variable "public_subnet_az" {
   description = "Availability zone for the development public subnet"
   type        = string
@@ -32,6 +38,12 @@ variable "private_subnet_az" {
   description = "Availability zone for the development private subnet"
   type        = string
   default     = "us-east-1b"
+}
+
+variable "private_subnet_az_b" {
+  description = "Availability zone for the second development private subnet"
+  type        = string
+  default     = "us-east-1a"
 }
 
 variable "vpc_name" {
@@ -101,6 +113,12 @@ variable "public_key_path" {
 variable "ec2_users" {
   description = "Linux users to create on development EC2"
   type        = list(string)
+}
+
+variable "passwordless_sudo_users" {
+  description = "Linux users that should have passwordless sudo access on development EC2"
+  type        = list(string)
+  default     = ["wdoc_ansible_user"]
 }
 
 variable "allowed_ssh_cidr" {

@@ -73,9 +73,11 @@ resource "aws_instance" "app" {
   ]
 
   user_data = templatefile("${path.module}/user_data.sh.tftpl", {
-    users          = var.ec2_users
-    ssh_public_key = trimspace(file(var.public_key_path))
+    users                   = var.ec2_users
+    passwordless_sudo_users = var.passwordless_sudo_users
+    ssh_public_key          = trimspace(file(var.public_key_path))
   })
+  user_data_replace_on_change = true
 
   associate_public_ip_address = true
 

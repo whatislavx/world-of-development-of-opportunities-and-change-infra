@@ -8,48 +8,46 @@ on:
                 required: true
                 default: both
                 type: choice
-                options:
-                    - development
-                    - staging
-                    - both
+                options: [ development, staging, both ]
 
 jobs:
     provision-development:
-        if: ${{ github.event.inputs.environment == 'development' || github.event.inputs.environment == 'both' }}
+        if: github.event.inputs.environment == 'development' ||
+            github.event.inputs.environment == 'both'
         runs-on: ubuntu-latest
-        environment: ${{ github.event.inputs.environment == 'both' && 'development' || github.event.inputs.environment }}
-
+        environment: development
         steps:
-            - name: Run Ansible Provision
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Run Ansible Provision (Dev)
               uses: dawidd6/action-ansible-playbook@v2
               with:
                   playbook: ansible/provision.yml
-                  key: ${{ secrets.SSH_PRIVATE_KEY }}
-                  inventory: ansible/inventory.ini
-                  options: >
-                      --limit development
-                      --extra-vars "
-                      env_type=development
-                      enable_ssl=false
-                      domain_name=
-                      "
+                  key: |
+                      ${{ secrets.SSH_PRIVATE_KEY }}
+                  inventory: ""
+                  options: >-
+                      -i ansible/inventory.ini --limit development --extra-vars
+                      "env_type=development enable_ssl=false domain_name="
 
     provision-staging:
-        if: ${{ github.event.inputs.environment == 'staging' || github.event.inputs.environment == 'both' }}
+        if: github.event.inputs.environment == 'staging' ||
+            github.event.inputs.environment == 'both'
         runs-on: ubuntu-latest
-        environment: ${{ github.event.inputs.environment == 'both' && 'staging' || github.event.inputs.environment }}
-
+        environment: staging
         steps:
-            - name: Run Ansible Provision
+            - name: Checkout repository
+              uses: actions/checkout@v4
+
+            - name: Run Ansible Provision (Staging)
               uses: dawidd6/action-ansible-playbook@v2
               with:
                   playbook: ansible/provision.yml
-                  key: ${{ secrets.SSH_PRIVATE_KEY }}
-                  inventory: ansible/inventory.ini
-                  options: >
-                      --limit staging
-                      --extra-vars "
-                      env_type=staging
-                      enable_ssl=true
-                      domain_name=staging.mydomain.com
-                      "
+                  key: |
+                      ${{ secrets.SSH_PRIVATE_KEY }}
+                  inventory: ""
+                  options: >-
+                      -i ansible/inventory.ini --limit staging --extra-vars
+                      "env_type=staging enable_ssl=true
+                      domain_name=staging.mydomain.com"

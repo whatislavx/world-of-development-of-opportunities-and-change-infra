@@ -1,5 +1,5 @@
 - name: App Deploy
-  hosts: "{{ env_type }}"
+  hosts: "{{ env_type | default('development') }}"
   become: yes
 
   vars:

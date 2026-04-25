@@ -69,13 +69,15 @@ resource "aws_db_parameter_group" "postgres_parameters" {
   family = "postgres15"
 
   parameter {
-    name  = "max_connections"
-    value = "30"
+    name         = "max_connections"
+    value        = "30"
+    apply_method = "pending-reboot"
   }
 
   parameter {
-    name  = "shared_buffers"
-    value = "{DBInstanceClassMemory/4096}"
+    name         = "shared_buffers"
+    value        = "{DBInstanceClassMemory/4096}"
+    apply_method = "pending-reboot"
   }
 
   parameter {

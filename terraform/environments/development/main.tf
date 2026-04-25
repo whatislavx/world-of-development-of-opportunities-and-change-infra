@@ -9,8 +9,10 @@ module "network" {
   vpc_cidr                = var.vpc_cidr
   public_subnet_cidr      = var.public_subnet_cidr
   private_subnet_cidr     = var.private_subnet_cidr
+  private_subnet_cidr_b   = var.private_subnet_cidr_b
   public_subnet_az        = var.public_subnet_az
   private_subnet_az       = var.private_subnet_az
+  private_subnet_az_b     = var.private_subnet_az_b
   vpc_name                = var.vpc_name
   igw_name                = var.igw_name
   public_subnet_name      = var.public_subnet_name
@@ -45,6 +47,7 @@ module "compute" {
   key_name                   = var.key_name
   public_key_path            = var.public_key_path
   ec2_users                  = var.ec2_users
+  passwordless_sudo_users    = var.passwordless_sudo_users
   iam_instance_profile       = module.storage.iam_instance_profile_name
   allowed_ssh_cidr           = var.allowed_ssh_cidr
   environment                = local.environment
@@ -53,14 +56,3 @@ module "compute" {
   security_group_description = var.security_group_description
 }
 
-
-resource "aws_s3_bucket" "test_drift_bucket" {
-  # Спробуймо використати невалідне ім'я (з великими літерами), 
-  # AWS дозволяє тільки малі літери, цифри та дефіси.
-  bucket = "MY_VERY_WRONG_BUCKET_NAME_TEST_2026" 
-
-  tags = {
-    Name        = "Drift Test"
-    Environment = "Dev"
-  }
-}

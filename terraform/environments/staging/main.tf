@@ -9,8 +9,10 @@ module "network" {
   vpc_cidr                = var.vpc_cidr
   public_subnet_cidr      = var.public_subnet_cidr
   private_subnet_cidr     = var.private_subnet_cidr
+  private_subnet_cidr_b   = var.private_subnet_cidr_b
   public_subnet_az        = var.public_subnet_az
   private_subnet_az       = var.private_subnet_az
+  private_subnet_az_b     = var.private_subnet_az_b
   vpc_name                = var.vpc_name
   igw_name                = var.igw_name
   public_subnet_name      = var.public_subnet_name
@@ -46,6 +48,8 @@ module "compute" {
   subnet_id                  = module.network.public_subnet_id
   key_name                   = var.key_name
   public_key_path            = var.public_key_path
+  ec2_users                  = var.ec2_users
+  passwordless_sudo_users    = var.passwordless_sudo_users
   iam_instance_profile       = module.storage.iam_instance_profile_name
   allowed_ssh_cidr           = var.allowed_ssh_cidr
   environment                = local.environment
@@ -64,7 +68,7 @@ module "database" {
   db_name                 = var.db_name
   username                = var.db_username
   password                = var.db_password
-  subnet_ids              = [module.network.private_subnet_id]
+  subnet_ids              = [module.network.private_subnet_id_a, module.network.private_subnet_id_b]
   vpc_id                  = module.network.vpc_id
   ec2_sg_id               = module.compute.security_group_id
   backup_retention_period = var.db_backup_retention_period

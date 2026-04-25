@@ -46,6 +46,12 @@ variable "ec2_users" {
   default     = ["wdoc_ansible_user"]
 }
 
+variable "passwordless_sudo_users" {
+  description = "Linux users that should have passwordless sudo access"
+  type        = list(string)
+  default     = []
+}
+
 variable "iam_instance_profile" {
   description = "Optional IAM instance profile name for the EC2 instance"
   type        = string
