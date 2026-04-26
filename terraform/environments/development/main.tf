@@ -55,4 +55,3 @@ module "compute" {
   security_group_name        = var.security_group_name
   security_group_description = var.security_group_description
 }
-
