@@ -21,8 +21,6 @@ services:
     networks:
       - wdoc-network
 
-
-
   nginx:
     image: nginx:stable-alpine
     container_name: wdoc-nginx-staging
@@ -39,7 +37,50 @@ services:
     networks:
       - wdoc-network
 
+  redis:
+    image: redis:alpine
+    container_name: wdoc-redis-staging
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - wdoc-network
+
+  celery_beat:
+    image: whatislavx/wdoc-backend:latest
+    container_name: celery_beat_staging
+    command: celery -A app.celery_app beat --loglevel=info
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    networks:
+      - wdoc-network
+
+  celery_worker:
+    image: whatislavx/wdoc-backend:latest
+    container_name: celery_worker_staging
+    command: celery -A app.celery_app worker --loglevel=info
+    depends_on:
+      redis:
+        condition: service_healthy
+    restart: always
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/1
+    deploy:
+      resources:
+        limits:
+          memory: 384M
+    networks:
+      - wdoc-network
+
 networks:
   wdoc-network:
     driver: bridge
-
