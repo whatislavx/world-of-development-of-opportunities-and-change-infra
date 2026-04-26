@@ -86,7 +86,6 @@ services:
     networks:
       - wdoc-network
 
-
   nginx:
     image: nginx:stable-alpine
     container_name: wdoc-nginx
