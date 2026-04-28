@@ -1,6 +1,5 @@
 project_root: "/home/{{ ansible_user }}/app"
 env_type: development
-deploy_mode: auto
 service_name: backend
 
 supported_env_types:
@@ -14,6 +13,5 @@ updatable_services:
   - celery_beat
 
 env_files:
-  - { src: "frontend.env.j2", dest: "frontend.env" }
   - { src: "backend.env.j2", dest: "backend.env" }
   - { src: "database.env.j2", dest: "database.env" }

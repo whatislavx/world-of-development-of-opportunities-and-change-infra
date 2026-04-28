@@ -95,8 +95,7 @@ flowchart TD
 |   |   `-- server_tuning/
 |   `-- templates/
 |       |-- backend.env.j2
-|       |-- database.env.j2
-|       `-- frontend.env.j2
+|       `-- database.env.j2
 |-- terraform/
 |   |-- environments/
 |   |   |-- development/

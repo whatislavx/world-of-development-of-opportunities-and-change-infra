@@ -25,7 +25,6 @@ env:
         github.event.inputs.environment ||  (github.event.client_payload.ref ==
         'main' && 'staging' || 'development') }}
     SERVICE: ${{ github.event.inputs.service || github.event.client_payload.service }}
-    DEPLOY_MODE: ${{ github.event.inputs.deploy_mode || 'update' }}
 
 concurrency:
     group: deploy-${{ github.event_name == 'workflow_dispatch' &&
@@ -92,7 +91,6 @@ jobs:
                       --limit ${{ env.ENVIRONMENT }}  --extra-vars "{
                         \"env_type\": \"${{ env.ENVIRONMENT }}\",
                         \"service_name\": \"${{ env.SERVICE }}\",
-                        \"deploy_mode\": \"${{ env.DEPLOY_MODE }}\",
                         \"domain_name\": \"${{ env.ENVIRONMENT == 'staging' && 'stage-wdoc.pp.ua' || '' }}\",
                         \"dockerhub_user\": \"${{ secrets.DOCKERHUB_USERNAME }}\",
                         \"dockerhub_token\": \"${{ secrets.DOCKERHUB_TOKEN }}\",
