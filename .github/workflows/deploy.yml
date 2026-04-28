@@ -95,5 +95,7 @@ jobs:
                         \"db_host\": \"${{ secrets.DB_HOST }}\",
                         \"secret_key\": \"${{ secrets.BACKEND_SECRET_KEY }}\",
                         \"api_url\": \"${{ secrets.API_URL }}\",
-                        \"allowed_hosts\": \"${{ secrets.ALLOWED_HOSTS }}\"
+                        \"allowed_hosts\": \"${{ secrets.ALLOWED_HOSTS }}\",
+                        \"celery_broker_url\": \"${{ secrets.CELERY_BROKER_URL }}\",
+                        \"celery_result_backend\": \"${{ secrets.CELERY_RESULT_BACKEND }}\"
                       }"
