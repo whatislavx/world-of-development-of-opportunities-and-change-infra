@@ -13,11 +13,6 @@ on:
                 required: true
                 type: choice
                 options: [ frontend, backend ]
-            deploy_mode:
-                required: false
-                default: update
-                type: choice
-                options: [ init, update ]
 
 env:
     ENVIRONMENT: >-
