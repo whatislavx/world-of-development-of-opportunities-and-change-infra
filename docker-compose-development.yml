@@ -65,7 +65,7 @@ services:
       - wdoc-network
 
   celery:
-    image: whatislavx/wdoc-backend:latest
+    image: whatislavx/wdoc-backend-test:latest
     container_name: celery_development
     entrypoint: ["/bin/sh", "-c"]
     command: celery -A config worker --loglevel=info
