@@ -86,6 +86,7 @@ jobs:
                       --limit ${{ env.ENVIRONMENT }}  --extra-vars "{
                         \"env_type\": \"${{ env.ENVIRONMENT }}\",
                         \"service_name\": \"${{ env.SERVICE }}\",
+                        \"debug\": \"${{ env.ENVIRONMENT == 'development' && 'True' || 'False' }}\",
                         \"domain_name\": \"${{ env.ENVIRONMENT == 'staging' && 'stage-wdoc.pp.ua' || '' }}\",
                         \"dockerhub_user\": \"${{ secrets.DOCKERHUB_USERNAME }}\",
                         \"dockerhub_token\": \"${{ secrets.DOCKERHUB_TOKEN }}\",
