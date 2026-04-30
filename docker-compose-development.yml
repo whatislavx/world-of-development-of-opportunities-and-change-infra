@@ -1,6 +1,6 @@
 services:
   frontend:
-    image: whatislavx/wdoc-frontend:latest
+    image: whatislavx/wdoc-frontend-test:latest
     container_name: wdoc-frontend-development
     depends_on:
       backend:
@@ -15,7 +15,7 @@ services:
       - wdoc-network
 
   backend:
-    image: whatislavx/wdoc-backend:latest
+    image: whatislavx/wdoc-backend-test:latest
     container_name: wdoc-backend-development
     env_file: backend.env
     depends_on:
