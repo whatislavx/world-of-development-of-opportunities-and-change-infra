@@ -46,6 +46,20 @@ locals {
       cidr_blocks = ["0.0.0.0/0"]
     },
     {
+      description = "Allow SMTP submission outbound"
+      from_port   = 587
+      to_port     = 587
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    },
+    {
+      description = "Allow SMTPS outbound"
+      from_port   = 465
+      to_port     = 465
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+    },
+    {
       description = "Allow RDS access"
       from_port   = 5432
       to_port     = 5432

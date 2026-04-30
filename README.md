@@ -52,7 +52,12 @@ flowchart TD
     DEPLOY --> NGINX[Nginx]
     DEPLOY --> FE[Frontend]
     DEPLOY --> BE[Backend]
+    DEPLOY --> CEL[Celery Worker]
+    DEPLOY --> REDIS[(Redis)]
     DEPLOY --> DB[(PostgreSQL Container)]
+    BE --> REDIS
+    CEL --> REDIS
+    CEL --> DB
 ```
 
 ### Staging
@@ -73,6 +78,13 @@ flowchart TD
     DEPLOY --> NGINX[Nginx + TLS]
     DEPLOY --> FE[Frontend]
     DEPLOY --> BE[Backend]
+    DEPLOY --> CEL[Celery Worker]
+    DEPLOY --> REDIS[(Redis)]
+    DEPLOY --> RDS[(RDS PostgreSQL)]
+    BE --> REDIS
+    CEL --> REDIS
+    BE --> RDS
+    CEL --> RDS
 ```
 
 ## Repository Structure
@@ -132,7 +144,7 @@ Before first apply/deploy:
 - Update `terraform/environments/development/terraform.tfvars`
 - Update `terraform/environments/staging/terraform.tfvars`
 - Minimum values: `key_name`, `public_key_path`, `allowed_ssh_cidr`, `bucket_name`
-- For staging RDS: `db_name`, `db_user`, `db_password`, `db_allocated_storage`, etc.
+- For staging RDS: `postgres_db`, `postgres_user`, `postgres_password`, `db_allocated_storage`, etc.
 
 2) Ansible inventory
 - Set real hosts in `ansible/inventory.ini` for both groups: `development`, `staging`
@@ -141,9 +153,10 @@ Before first apply/deploy:
 3) Deployment variables
 - Required for templates/playbooks:
   - `dockerhub_user`, `dockerhub_token`
-  - `secret_key`, `api_url`, `allowed_hosts`
-  - `db_name`, `db_user`, `db_pass`
-  - `db_host` (mandatory for `staging`)
+  - `secret_key`, `frontend_url`, `allowed_hosts`
+  - `celery_broker_url`, `celery_result_backend`
+  - `postgres_db`, `postgres_user`, `postgres_password`
+  - `postgres_host` (mandatory for `staging`)
 
 ## Terraform
 
@@ -223,7 +236,7 @@ Example deploy:
 ```bash
 ansible-playbook ansible/deploy.yml \
   --limit development \
-  --extra-vars "env_type=development service_name=backend deploy_mode=update ..."
+  --extra-vars "env_type=development service_name=backend ..."
 ```
 
 ## CI/CD Workflows
@@ -235,7 +248,7 @@ Workflows live in `.github/workflows/`.
 - Resolves target env from dispatch payload/branch mapping.
 - Runs Terraform drift check (`plan -refresh-only -detailed-exitcode`).
 - Runs Trivy IaC scan for selected Terraform environment.
-- Executes Ansible deploy with selected `service` and `deploy_mode`.
+- Executes Ansible deploy with selected `service`.
 
 2) `infra-provision.yml`
 - Manual workflow to run host provisioning playbook.
@@ -247,16 +260,20 @@ Minimum secrets:
 - `SSH_PRIVATE_KEY`
 - `DOCKERHUB_USERNAME`
 - `DOCKERHUB_TOKEN`
-- `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_HOST`
+- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`
 - `BACKEND_SECRET_KEY`
-- `API_URL`
+- `FRONTEND_URL`
 - `ALLOWED_HOSTS`
+- `CELERY_BROKER_URL`
+- `CELERY_RESULT_BACKEND`
 
 ## Runtime Services
 
 Defined in compose files:
 - `frontend`
 - `backend`
+- `celery`
+- `redis`
 - `nginx`
 - `db` (development only)
 
@@ -295,6 +312,8 @@ Nginx routing:
 cd /home/<ansible_user>/app
 docker compose ps
 docker compose logs --tail=200 backend
+docker compose logs --tail=200 celery
+docker compose logs --tail=200 redis
 docker compose logs --tail=200 nginx
 ```
 

@@ -43,9 +43,9 @@ resource "aws_db_instance" "this" {
   storage_encrypted = true
   storage_type      = "gp3"
 
-  db_name  = var.db_name
-  username = var.username
-  password = var.password
+  db_name  = var.postgres_db
+  username = var.postgres_user
+  password = var.postgres_password
 
   vpc_security_group_ids = [aws_security_group.rds.id]
   db_subnet_group_name   = aws_db_subnet_group.this.name

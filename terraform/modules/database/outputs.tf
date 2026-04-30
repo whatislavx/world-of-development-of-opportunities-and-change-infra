@@ -23,12 +23,12 @@ output "db_instance_port" {
   description = "The database port"
 }
 
-output "db_name" {
+output "postgres_db" {
   value       = aws_db_instance.this.db_name
   description = "The database name"
 }
 
-output "db_username" {
+output "postgres_user" {
   value       = aws_db_instance.this.username
   description = "The master username"
 }

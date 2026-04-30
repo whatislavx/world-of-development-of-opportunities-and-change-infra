@@ -3,8 +3,8 @@
   ansible.builtin.file:
     path: "{{ project_root }}"
     state: directory
-    owner: wdoc_ansible_user
-    group: wdoc_ansible_user
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
     mode: "0755"
 
 - name: "Configs: Deployment files"
@@ -13,8 +13,8 @@
       ansible.builtin.template:
         src: "{{ item.src }}"
         dest: "{{ project_root }}/{{ item.dest }}"
-        owner: wdoc_ansible_user
-        group: wdoc_ansible_user
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
         mode: "0644"
       loop: "{{ env_files }}"
 
@@ -24,8 +24,8 @@
           'conf' }}"
         dest: "{{ project_root }}/{{ 'docker-compose.yml' if item == 'docker-compose'
           else 'nginx.conf' }}"
-        owner: wdoc_ansible_user
-        group: wdoc_ansible_user
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
         mode: "0644"
       loop: [ "docker-compose", "nginx" ]
 

@@ -9,8 +9,7 @@ supported_env_types:
 updatable_services:
   - frontend
   - backend
-  - celery_worker
-  - celery_beat
+  - celery
 
 env_files:
   - { src: "backend.env.j2", dest: "backend.env" }
