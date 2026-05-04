@@ -236,3 +236,13 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
+
+variable "ses_domain" {
+  description = "The domain to verify with SES (staging)."
+  type        = string
+}
+
+variable "ses_email" {
+  description = "The email address to verify with SES (staging)."
+  type        = string
+}

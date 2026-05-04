@@ -37,6 +37,12 @@ module "storage" {
   )
 }
 
+module "email" {
+  source = "../../modules/email"
+  domain = var.ses_domain
+  email  = var.ses_email
+}
+
 module "compute" {
   source = "../../modules/compute"
 

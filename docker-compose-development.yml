@@ -68,7 +68,7 @@ services:
     image: whatislavx/wdoc-backend-test:latest
     container_name: celery_development
     entrypoint: ["/bin/sh", "-c"]
-    command: celery -A config worker --loglevel=info
+    command: ["celery", "-A", "config", "worker", "--loglevel=info"]
     env_file: backend.env
     depends_on:
       redis:
@@ -76,10 +76,6 @@ services:
       backend:
         condition: service_healthy
     restart: always
-    deploy:
-      resources:
-        limits:
-          memory: 384M
     networks:
       - wdoc-network
 

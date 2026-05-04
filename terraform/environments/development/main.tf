@@ -38,8 +38,7 @@ module "storage" {
 }
 
 module "compute" {
-  source = "../../modules/compute"
-
+  source                     = "../../modules/compute"
   aws_region                 = var.aws_region
   instance_type              = var.instance_type
   vpc_id                     = module.network.vpc_id
@@ -54,4 +53,10 @@ module "compute" {
   instance_name              = var.instance_name
   security_group_name        = var.security_group_name
   security_group_description = var.security_group_description
+}
+
+module "email" {
+  source = "../../modules/email"
+  domain = var.ses_domain
+  email  = var.ses_email
 }
