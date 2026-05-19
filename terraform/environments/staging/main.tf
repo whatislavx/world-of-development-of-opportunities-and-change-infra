@@ -37,6 +37,12 @@ module "storage" {
   )
 }
 
+module "email" {
+  source = "../../modules/email"
+  domain = var.ses_domain
+  email  = var.ses_email
+}
+
 module "compute" {
   source = "../../modules/compute"
 
@@ -65,9 +71,9 @@ module "database" {
   engine_version          = var.db_engine_version
   instance_class          = var.db_instance_class
   storage                 = var.db_storage
-  db_name                 = var.db_name
-  username                = var.db_username
-  password                = var.db_password
+  postgres_db             = var.postgres_db
+  postgres_user           = var.postgres_user
+  postgres_password       = var.postgres_password
   subnet_ids              = [module.network.private_subnet_id_a, module.network.private_subnet_id_b]
   vpc_id                  = module.network.vpc_id
   ec2_sg_id               = module.compute.security_group_id

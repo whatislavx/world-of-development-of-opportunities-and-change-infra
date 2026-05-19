@@ -165,19 +165,19 @@ variable "iam_policy_name" {
   default     = "wdoc-stage-ec2-s3-policy"
 }
 
-variable "db_name" {
+variable "postgres_db" {
   description = "Name of the staging database"
   type        = string
   default     = "appdb"
 }
 
-variable "db_username" {
+variable "postgres_user" {
   description = "Master username for the staging database"
   type        = string
   sensitive   = true
 }
 
-variable "db_password" {
+variable "postgres_password" {
   description = "Master password for the staging database"
   type        = string
   sensitive   = true
@@ -235,4 +235,14 @@ variable "tags" {
   description = "Extra tags for staging resources"
   type        = map(string)
   default     = {}
+}
+
+variable "ses_domain" {
+  description = "The domain to verify with SES (staging)."
+  type        = string
+}
+
+variable "ses_email" {
+  description = "The email address to verify with SES (staging)."
+  type        = string
 }

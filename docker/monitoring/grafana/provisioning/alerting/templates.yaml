@@ -1,0 +1,11 @@
+apiVersion: 1
+
+templates:
+  - name: default-template
+    template: |-
+      {{ define "default.message" }}
+      {{ .CommonLabels.alertname }}
+      {{ range .Alerts }}
+      - {{ .Annotations.summary }}
+      {{ end }}
+      {{ end }}

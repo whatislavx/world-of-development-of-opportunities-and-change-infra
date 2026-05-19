@@ -21,18 +21,18 @@ variable "storage" {
   default     = 20
 }
 
-variable "db_name" {
+variable "postgres_db" {
   description = "Master database name"
   type        = string
 }
 
-variable "username" {
+variable "postgres_user" {
   description = "Master username for the database"
   type        = string
   sensitive   = true
 }
 
-variable "password" {
+variable "postgres_password" {
   description = "Master password for the database"
   type        = string
   sensitive   = true

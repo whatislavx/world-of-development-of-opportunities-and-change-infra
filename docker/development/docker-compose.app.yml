@@ -1,0 +1,85 @@
+# Application services (backend, frontend, nginx)
+# These services can be restarted more frequently
+
+services:
+  backend:
+    image: whatislavx/wdoc-backend-dev:latest
+    container_name: wdoc-backend-development
+    env_file: ./backend.env
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: always
+    volumes:
+      - static_volume:/app/static
+      - media_volume:/app/media
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://127.0.0.1:8000/api/v1/health-check/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - wdoc-network
+
+  celery:
+    image: whatislavx/wdoc-backend-dev:latest
+    container_name: celery_development
+    command: ["celery", "-A", "config", "worker", "--loglevel=info"]
+    env_file: ./backend.env
+    depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    restart: always
+    networks:
+      - wdoc-network
+
+  frontend:
+    image: whatislavx/wdoc-frontend-dev:latest
+    container_name: wdoc-frontend-development
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: always
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1:8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    networks:
+      - wdoc-network
+
+  nginx:
+    image: nginx:stable-alpine
+    container_name: wdoc-nginx-development
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - NGINX_ENVSUBST_OUTPUT_DIR=/etc/nginx
+    env_file: ./nginx.env
+    volumes:
+      - ./nginx.conf:/etc/nginx/templates/nginx.conf.template:ro
+      - static_volume:/app/static:ro
+      - media_volume:/app/media:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      backend:
+        condition: service_healthy
+      frontend:
+        condition: service_healthy
+    networks:
+      - wdoc-network
+
+networks:
+  wdoc-network:
+    external: true
+
+volumes:
+  static_volume:
+  media_volume:

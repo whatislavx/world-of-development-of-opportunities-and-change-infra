@@ -1,5 +1,5 @@
 project_root: "/home/{{ ansible_user }}/app"
 env_type: development
-enable_ssl: "{{ env_type == 'staging' }}"
-domain_name: ""
+enable_ssl: true
+domain_name: "wdoc.pp.ua"
 certbot_renew_weekday: "1"
