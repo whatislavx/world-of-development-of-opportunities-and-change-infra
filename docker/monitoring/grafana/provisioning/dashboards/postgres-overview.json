@@ -1,0 +1,155 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+      "id": 1,
+      "targets": [
+        {
+          "refId": "A",
+          "namespace": "AWS/RDS",
+          "metricName": "CPUUtilization",
+          "region": "default",
+          "statistics": ["Average"],
+          "dimensions": {
+            "DBInstanceIdentifier": "$db_instance"
+          },
+          "period": "",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "matchExact": true
+        }
+      ],
+      "title": "RDS CPU Utilization (%)",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+      "id": 2,
+      "targets": [
+        {
+          "refId": "A",
+          "namespace": "AWS/RDS",
+          "metricName": "DatabaseConnections",
+          "region": "default",
+          "statistics": ["Average"],
+          "dimensions": {
+            "DBInstanceIdentifier": "$db_instance"
+          },
+          "period": "",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "matchExact": true
+        }
+      ],
+      "title": "RDS Connections",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+      "id": 3,
+      "targets": [
+        {
+          "refId": "A",
+          "namespace": "AWS/RDS",
+          "metricName": "ReadLatency",
+          "region": "default",
+          "statistics": ["Average"],
+          "dimensions": {
+            "DBInstanceIdentifier": "$db_instance"
+          },
+          "period": "",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "matchExact": true
+        },
+        {
+          "refId": "B",
+          "namespace": "AWS/RDS",
+          "metricName": "WriteLatency",
+          "region": "default",
+          "statistics": ["Average"],
+          "dimensions": {
+            "DBInstanceIdentifier": "$db_instance"
+          },
+          "period": "",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "matchExact": true
+        }
+      ],
+      "title": "RDS Read/Write Latency",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "CloudWatch",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+      "id": 4,
+      "targets": [
+        {
+          "refId": "A",
+          "namespace": "AWS/RDS",
+          "metricName": "FreeStorageSpace",
+          "region": "default",
+          "statistics": ["Average"],
+          "dimensions": {
+            "DBInstanceIdentifier": "$db_instance"
+          },
+          "period": "",
+          "queryMode": "Metrics",
+          "metricQueryType": 0,
+          "metricEditorMode": 0,
+          "matchExact": true
+        }
+      ],
+      "title": "RDS Free Storage Space",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "1m",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["rds", "cloudwatch"],
+  "templating": {
+    "list": [
+      {
+        "name": "db_instance",
+        "label": "DB Instance",
+        "type": "query",
+        "datasource": "CloudWatch",
+        "query": "dimension_values(default, AWS/RDS, CPUUtilization, DBInstanceIdentifier)",
+        "refresh": 1,
+        "multi": false,
+        "includeAll": false,
+        "sort": 1
+      }
+    ]
+  },
+  "time": { "from": "now-6h", "to": "now" },
+  "timezone": "",
+  "title": "RDS Overview",
+  "uid": "rds-overview",
+  "version": 1
+}

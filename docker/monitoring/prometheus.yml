@@ -1,13 +1,48 @@
 global:
-  scrape_interval: 15s
-  evaluation_interval: 15s
+  scrape_interval: 1m
+  evaluation_interval: 1m
+
+rule_files:
+  - /etc/prometheus/alert-rules.yml
+
 scrape_configs:
-  - job_name: "prometheus"
+  - job_name: prometheus
     static_configs:
-      - targets: [ "localhost:9090" ]
-  - job_name: "node-exporter"
+      - targets: ["localhost:9090"]
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: "(prometheus_tsdb_.*|prometheus_http_requests_total|up)"
+        action: keep
+
+  - job_name: node-exporter
     static_configs:
-      - targets: [ "node-exporter:9100" ]
-  - job_name: "backend"
+      - targets: ["node-exporter:9100"]
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: "(node_cpu_seconds_total|node_memory_MemAvailable_bytes|node_memory_MemTotal_bytes|node_filesystem_avail_bytes|node_filesystem_size_bytes|node_load15|up)"
+        action: keep
+
+  - job_name: cadvisor
     static_configs:
-      - targets: [ "backend:8000" ]
+      - targets: ["cadvisor:8080"]
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: "(container_last_seen|container_tasks_state|engine_daemon_container_states_containers|up)"
+        action: keep
+
+  - job_name: backend
+    metrics_path: /metrics/
+    static_configs:
+      - targets: ["backend:8000"]
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: "(django_requests_total_errors_total|django_requests_total|django_request_latency_seconds_bucket|up)"
+        action: keep
+
+  - job_name: nginx-exporter
+    static_configs:
+      - targets: ["nginx-exporter:9113"]
+    metric_relabel_configs:
+      - source_labels: [__name__]
+        regex: "(nginx_up|nginx_connections_active|nginx_ingress_controller_requests|up)"
+        action: keep

@@ -27,6 +27,12 @@ variable "iam_policy_name" {
   default     = "ec2-s3-policy"
 }
 
+variable "additional_managed_policy_arns" {
+  description = "Additional AWS managed policy ARNs to attach to the EC2 role"
+  type        = list(string)
+  default     = []
+}
+
 variable "tags" {
   description = "Additional tags to add to resources"
   type        = map(string)

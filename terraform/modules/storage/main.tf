@@ -69,6 +69,13 @@ resource "aws_iam_role_policy" "ec2_s3_policy" {
   })
 }
 
+resource "aws_iam_role_policy_attachment" "additional_managed_policies" {
+  for_each = toset(var.additional_managed_policy_arns)
+
+  role       = aws_iam_role.ec2_s3_role.name
+  policy_arn = each.value
+}
+
 resource "aws_iam_instance_profile" "ec2_profile" {
   name = "${var.iam_role_name}-profile"
   role = aws_iam_role.ec2_s3_role.name

@@ -1,0 +1,132 @@
+groups:
+  - name: infrastructure.rules
+    interval: 30s
+    rules:
+      - alert: NodeExporterDown
+        expr: up{job="node-exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Node exporter is down"
+          description: "Node exporter target {{ $labels.instance }} is unreachable"
+
+      - alert: HighCPUUsage
+        expr: (100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)) > 85
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is above 85% for 5 minutes"
+
+      - alert: HighMemoryUsage
+        expr: (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is above 90% for 5 minutes"
+
+      - alert: DiskSpaceRunningOut
+        expr: (1 - (node_filesystem_avail_bytes{fstype!="tmpfs",mountpoint!~"/run.*"} / node_filesystem_size_bytes{fstype!="tmpfs",mountpoint!~"/run.*"})) * 100 > 85
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Disk usage is high on {{ $labels.instance }}"
+          description: "Filesystem {{ $labels.mountpoint }} usage is above 85%"
+
+  - name: application.rules
+    interval: 30s
+    rules:
+      - alert: BackendDown
+        expr: up{job="backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Backend is down"
+          description: "Prometheus cannot scrape backend /metrics endpoint"
+
+      - alert: HighBackendErrorRate
+        expr: sum(rate(django_requests_total_errors_total[5m])) / clamp_min(sum(rate(django_requests_total[5m])), 0.001) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High backend error rate"
+          description: "Error rate is above 5% for 5 minutes"
+
+      - alert: HighBackendLatencyP95
+        expr: histogram_quantile(0.95, sum by (le) (rate(django_request_latency_seconds_bucket[5m]))) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High backend latency (p95)"
+          description: "95th percentile latency is above 1 second"
+
+  - name: docker.rules
+    interval: 30s
+    rules:
+      - alert: CadvisorDown
+        expr: up{job="cadvisor"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "cAdvisor is down"
+          description: "Container-level metrics are unavailable"
+
+      - alert: ContainerDown
+        expr: time() - container_last_seen{job="cadvisor",container_label_com_docker_compose_service!=""} > 120
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Container appears down"
+          description: "Container {{ $labels.name }} has not been seen for more than 2 minutes"
+
+  - name: nginx.rules
+    interval: 30s
+    rules:
+      - alert: NginxExporterDown
+        expr: up{job="nginx-exporter"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Nginx exporter is down"
+          description: "Prometheus cannot scrape nginx-exporter"
+
+      - alert: NginxHighActiveConnections
+        expr: nginx_connections_active > 300
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High number of active Nginx connections"
+          description: "Active connections are above 300 for 10 minutes"
+
+  - name: business.rules
+    interval: 1m
+    rules:
+      - alert: NoNewRegistrations
+        expr: increase(user_registrations_total[1h]) == 0
+        for: 3h
+        labels:
+          severity: warning
+        annotations:
+          summary: "No new registrations in the last hour"
+          description: "No new user registrations detected for 3 hours"
+
+      - alert: HighFailedLoginRate
+        expr: rate(login_failed_total[5m]) > 0.05
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High failed login rate"
+          description: "Failed login rate is above threshold for 10 minutes"

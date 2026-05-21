@@ -55,8 +55,3 @@ module "compute" {
   security_group_description = var.security_group_description
 }
 
-module "email" {
-  source = "../../modules/email"
-  domain = var.ses_domain
-  email  = var.ses_email
-}

@@ -41,6 +41,7 @@
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
         mode: "0644"
+      when: env_type == 'staging'
 
     - name: "Copy nginx config"
       ansible.builtin.copy:
@@ -50,7 +51,7 @@
         group: "{{ ansible_user }}"
         mode: "0644"
 
-    - name: "Copy monitoring configs (prometheus, loki, promtail)"
+    - name: "Copy monitoring configs (prometheus, alerts, loki, promtail)"
       ansible.builtin.copy:
         src: "{{ playbook_dir }}/../docker/monitoring/{{ item }}"
         dest: "{{ project_root }}/{{ item }}"
@@ -59,8 +60,20 @@
         mode: "0644"
       loop:
         - prometheus.yml
+        - alert-rules.yml
         - loki-config.yaml
         - promtail-config.yaml
+      when: env_type == 'staging'
+
+    - name: "Copy Grafana provisioning"
+      ansible.builtin.copy:
+        src: "{{ playbook_dir }}/../docker/monitoring/grafana/provisioning/"
+        dest: "{{ project_root }}/grafana/provisioning/"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: "0644"
+        directory_mode: "0755"
+      when: env_type == 'staging'
 
 
 - name: "Deploy: Validate service selection"
@@ -73,7 +86,7 @@
   ansible.builtin.set_fact:
     compose_service_args: "{{ '' if service_name == 'all' else ' ' ~ service_name }}"
     compose_no_deps: "{{ '' if service_name == 'all' else ' --no-deps' }}"
-    compose_files: "-f docker-compose.infra.yml -f docker-compose.app.yml -f docker-compose.monitoring.yml"
+    compose_files: "{{ '-f docker-compose.infra.yml -f docker-compose.app.yml' if env_type == 'development' else '-f docker-compose.infra.yml -f docker-compose.app.yml -f docker-compose.monitoring.yml' }}"
 
 - name: "Docker: Create network"
   ansible.builtin.command: "docker network create wdoc-network"

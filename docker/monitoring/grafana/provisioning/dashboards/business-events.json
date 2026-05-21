@@ -1,0 +1,96 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": "-- Grafana --",
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "graphTooltip": 0,
+  "links": [],
+  "panels": [
+    {
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 8, "x": 0, "y": 0 },
+      "id": 1,
+      "targets": [
+        {
+          "expr": "rate(event_created_total[1h])",
+          "legendFormat": "events",
+          "refId": "A"
+        }
+      ],
+      "title": "Event Creations / sec",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 8, "x": 8, "y": 0 },
+      "id": 2,
+      "targets": [
+        {
+          "expr": "rate(comment_created_total[1h])",
+          "legendFormat": "comments",
+          "refId": "A"
+        }
+      ],
+      "title": "Comments / sec",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 8, "x": 16, "y": 0 },
+      "id": 3,
+      "targets": [
+        {
+          "expr": "rate(event_likes_total[1h])",
+          "legendFormat": "likes",
+          "refId": "A"
+        }
+      ],
+      "title": "Event Likes / sec",
+      "type": "timeseries"
+    },
+    {
+      "datasource": "Prometheus",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 8 },
+      "id": 4,
+      "targets": [
+        {
+          "expr": "event_created_total",
+          "legendFormat": "events total",
+          "refId": "A"
+        },
+        {
+          "expr": "comment_created_total",
+          "legendFormat": "comments total",
+          "refId": "B"
+        },
+        {
+          "expr": "event_likes_total",
+          "legendFormat": "likes total",
+          "refId": "C"
+        }
+      ],
+      "title": "Cumulative Business Actions",
+      "type": "timeseries"
+    }
+  ],
+  "refresh": "30s",
+  "schemaVersion": 39,
+  "style": "dark",
+  "tags": ["business", "events"],
+  "templating": { "list": [] },
+  "time": { "from": "now-30d", "to": "now" },
+  "timezone": "",
+  "title": "Business Events",
+  "uid": "business-events",
+  "version": 1
+}

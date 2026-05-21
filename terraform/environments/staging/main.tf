@@ -23,11 +23,12 @@ module "network" {
 module "storage" {
   source = "../../modules/storage"
 
-  bucket_name       = var.bucket_name
-  environment       = local.environment
-  enable_versioning = var.enable_versioning
-  iam_role_name     = var.iam_role_name
-  iam_policy_name   = var.iam_policy_name
+  bucket_name                    = var.bucket_name
+  environment                    = local.environment
+  enable_versioning              = var.enable_versioning
+  iam_role_name                  = var.iam_role_name
+  iam_policy_name                = var.iam_policy_name
+  additional_managed_policy_arns = var.additional_managed_policy_arns
   tags = merge(
     var.tags,
     {
@@ -35,12 +36,6 @@ module "storage" {
       Project     = "TeamProject225"
     }
   )
-}
-
-module "email" {
-  source = "../../modules/email"
-  domain = var.ses_domain
-  email  = var.ses_email
 }
 
 module "compute" {

@@ -10,3 +10,9 @@ datasources:
     type: loki
     access: proxy
     url: http://loki:3100
+  - name: CloudWatch
+    type: cloudwatch
+    access: proxy
+    jsonData:
+      authType: default
+      defaultRegion: ${AWS_S3_REGION_NAME}

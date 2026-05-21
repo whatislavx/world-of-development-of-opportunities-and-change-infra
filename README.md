@@ -21,7 +21,7 @@ This repository combines:
 - [Local Compose Variants](#local-compose-variants)
 - [Monitoring and Alerting](#monitoring-and-alerting)
 - [Grafana Dashboards](#grafana-dashboards)
-- [SES Email](#ses-email)
+- [SMTP Email](#smtp-email)
 - [Security Notes](#security-notes)
 - [Troubleshooting](#troubleshooting)
 
@@ -119,7 +119,6 @@ flowchart TD
 |   `-- modules/
 |       |-- compute/
 |       |-- database/
-|       |-- email/
 |       |-- network/
 |       `-- storage/
 |-- ansible.cfg
@@ -259,11 +258,13 @@ Minimum secrets:
 - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`
 - `BACKEND_SECRET_KEY`
 - `FRONTEND_URL`
+- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL`
 - `ALLOWED_HOSTS`
 - `CSRF_TRUSTED_ORIGINS`
 - `SITE_DOMAIN`
 - `CELERY_BROKER_URL`
 - `CELERY_RESULT_BACKEND`
+- `GRAFANA_PASSWORD`
 
 ## Runtime Services
 
@@ -313,7 +314,7 @@ docker compose -f docker/local-full/docker-compose.yml up -d
 
 ## Monitoring and Alerting
 
-Monitoring stack (Prometheus, Grafana, Loki, promtail, node-exporter):
+Monitoring stack (Prometheus, Grafana, Loki, promtail, node-exporter, cAdvisor, nginx-exporter):
 
 ```sh
 docker compose -f docker/monitoring/docker-compose.yml up -d
@@ -324,7 +325,7 @@ Promtail scrapes:
 - System logs: `/var/log/*.log`
 
 Grafana provisioning:
-- Datasources are provisioned for Prometheus and Loki.
+- Datasources are provisioned for Prometheus, Loki, and CloudWatch.
 - Slack contact point is provisioned in `docker/monitoring/grafana/provisioning/alerting/contactpoints.yaml`.
 
 Update the Slack webhook URL before deploying:
@@ -339,14 +340,13 @@ Planned dashboards (text-only design spec):
 - **Authentication:** successful logins and password reset requests over time.
 - **Business Events:** event creation, comments, and likes (business counters).
 - **User Growth:** registrations and profile creations split by profile type.
+- **Nginx Overview:** active connections, total HTTP requests, exporter availability.
+- **RDS Overview (CloudWatch):** CPU, connections, read/write latency, and free storage.
 
-## SES Email
+## SMTP Email
 
-SES relies on SMTP credentials and verified identities:
-- Verify domain/email in SES (Terraform creates identities but DNS must be applied).
-- Use the SES SMTP endpoint as `EMAIL_HOST` (example: `email-smtp.us-east-1.amazonaws.com`).
-- Configure `EMAIL_HOST_USER` and `EMAIL_HOST_PASSWORD` with SES SMTP creds.
-- Ensure `DEFAULT_FROM_EMAIL` matches a verified identity.
+Email delivery is configured via SMTP providers:
+- Set `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL`.
 
 ## Security Notes
 

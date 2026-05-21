@@ -165,6 +165,14 @@ variable "iam_policy_name" {
   default     = "wdoc-stage-ec2-s3-policy"
 }
 
+variable "additional_managed_policy_arns" {
+  description = "Additional AWS managed policy ARNs for the staging EC2 role"
+  type        = list(string)
+  default = [
+    "arn:aws:iam::aws:policy/CloudWatchReadOnlyAccess"
+  ]
+}
+
 variable "postgres_db" {
   description = "Name of the staging database"
   type        = string
@@ -237,12 +245,3 @@ variable "tags" {
   default     = {}
 }
 
-variable "ses_domain" {
-  description = "The domain to verify with SES (staging)."
-  type        = string
-}
-
-variable "ses_email" {
-  description = "The email address to verify with SES (staging)."
-  type        = string
-}
