@@ -75,7 +75,6 @@
         directory_mode: "0755"
       when: env_type == 'staging'
 
-
 - name: "Deploy: Validate service selection"
   ansible.builtin.assert:
     that:
