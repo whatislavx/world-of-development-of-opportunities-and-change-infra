@@ -197,6 +197,12 @@ variable "db_engine_version" {
   default     = "15.7"
 }
 
+variable "db_family" {
+  description = "PostgreSQL parameter group family for staging"
+  type        = string
+  default     = "postgres15"
+}
+
 variable "db_instance_class" {
   description = "RDS instance class for staging"
   type        = string

@@ -66,7 +66,7 @@ resource "aws_db_instance" "this" {
 
 resource "aws_db_parameter_group" "postgres_parameters" {
   name   = "${var.name}-params"
-  family = "postgres15"
+  family = var.db_family
 
   parameter {
     name         = "max_connections"
@@ -97,4 +97,3 @@ resource "aws_db_parameter_group" "postgres_parameters" {
 
   tags = var.tags
 }
-

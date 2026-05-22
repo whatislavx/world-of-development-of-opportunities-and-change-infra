@@ -9,6 +9,12 @@ variable "engine_version" {
   default     = "15.7"
 }
 
+variable "db_family" {
+  description = "The family of the DB parameter group"
+  type        = string
+  default     = "postgres15"
+}
+
 variable "instance_class" {
   description = "RDS instance type"
   type        = string
@@ -88,4 +94,3 @@ variable "tags" {
   type        = map(string)
   default     = {}
 }
-

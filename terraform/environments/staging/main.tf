@@ -64,6 +64,7 @@ module "database" {
 
   name                    = "wdoc-stage-db"
   engine_version          = var.db_engine_version
+  db_family               = var.db_family
   instance_class          = var.db_instance_class
   storage                 = var.db_storage
   postgres_db             = var.postgres_db
