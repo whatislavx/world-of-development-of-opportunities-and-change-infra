@@ -249,22 +249,37 @@ Workflows live in `.github/workflows/`.
 - Manual workflow to run host provisioning playbook.
 - Supports `development`, `staging`, or `both`.
 
-Minimum secrets:
-- `AWS_ACCESS_KEY_ID`
-- `AWS_SECRET_ACCESS_KEY`
-- `SSH_PRIVATE_KEY`
-- `DOCKERHUB_USERNAME`
-- `DOCKERHUB_TOKEN`
-- `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`
-- `BACKEND_SECRET_KEY`
-- `FRONTEND_URL`
-- `EMAIL_HOST`, `EMAIL_PORT`, `EMAIL_USE_TLS`, `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`, `DEFAULT_FROM_EMAIL`
-- `ALLOWED_HOSTS`
-- `CSRF_TRUSTED_ORIGINS`
-- `SITE_DOMAIN`
-- `CELERY_BROKER_URL`
-- `CELERY_RESULT_BACKEND`
-- `GRAFANA_PASSWORD`
+## GitHub Variables vs Secrets
+
+Which repository settings to store where (recommended):
+
+- Non-sensitive (GitHub Variables):
+  - `DOCKERHUB_USERNAME`: example_user
+  - `FRONTEND_URL`: http://localhost:3000
+  - `EMAIL_HOST`: smtp.example.com
+  - `EMAIL_PORT`: 587
+  - `EMAIL_USE_TLS`: true
+  - `DEFAULT_FROM_EMAIL`: noreply@example.com
+  - `USE_S3`: false
+  - `AWS_STORAGE_BUCKET_NAME`: my-bucket
+  - `AWS_S3_REGION_NAME`: us-east-1
+  - `SITE_DOMAIN`: example.com
+  - `ADMIN_EMAIL`: admin@example.com
+  - `ALLOWED_HOSTS`: localhost
+  - `CSRF_TRUSTED_ORIGINS`: http://localhost:3000
+
+- Sensitive (GitHub Secrets):
+  - `AWS_ACCESS_KEY_ID`: <your-aws-key-id>
+  - `AWS_SECRET_ACCESS_KEY`: <your-aws-secret>
+  - `SSH_PRIVATE_KEY`: (PEM private key)
+  - `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_HOST`
+  - `SECRET_KEY` (Django/Backend secret)
+  - `DOCKERHUB_TOKEN`
+  - `GRAFANA_PASSWORD`
+  - `EMAIL_HOST_USER`, `EMAIL_HOST_PASSWORD`
+  - `SLACK_WEBHOOK_URL`
+
+Quick setup: Settings → Secrets and variables → Actions in the repository. Add non-sensitive defaults under "Variables" and credentials under "Secrets".
 
 ## Runtime Services
 
@@ -289,28 +304,37 @@ Nginx routing:
 
 ## Local Compose Variants
 
-Local developer workflows:
-- `docker/local-frontend/docker-compose.yml` (build frontend locally, other services pulled)
-- `docker/local-backend/docker-compose.yml` (build backend locally, other services pulled)
-- `docker/local-full/docker-compose.yml` (build frontend + backend locally)
+Local developer workflows — use the compose files included under `docker/` depending on the scenario:
 
-Only the selected service is built locally; the rest of the stack uses prebuilt images.
+- `docker/local-full/docker-compose.yml` — full local stack (builds frontend + backend locally).
+- `docker/development/docker-compose.app.yml` — app-compose for the development environment (build or pull app images).
+- `docker/development/docker-compose.infra.yml` — infra services for development (redis, nginx, monitoring helpers).
+- `docker/staging/docker-compose.app.yml` and `docker/staging/docker-compose.infra.yml` — staging variants that reference prebuilt images.
+
+For most local development, prefer `docker/local-full/docker-compose.yml` which builds the application images locally; the environment-specific compose files under `docker/development` and `docker/staging` are intended for environment parity and CI use.
 
 Examples:
-
-```sh
-docker compose -f docker/local-frontend/docker-compose.yml up -d
-```
-
-```sh
-docker compose -f docker/local-backend/docker-compose.yml up -d
-```
 
 ```sh
 docker compose -f docker/local-full/docker-compose.yml up -d
 ```
 
-> **Note:** Create `backend.env`, `database.env`, and `nginx.env` in the infra repo root (same format as templates) before running local compose.
+```sh
+docker compose -f docker/development/docker-compose.app.yml up -d
+```
+
+```sh
+docker compose -f docker/development/docker-compose.infra.yml up -d
+```
+
+Note: create environment files from the templates in `ansible/templates/` (or copy the examples) before bringing the stack up. Example:
+
+```sh
+cp ansible/templates/backend.env.j2 backend.env
+cp ansible/templates/database.env.j2 database.env
+cp ansible/templates/nginx.env.j2 nginx.env
+# then edit values inside the copied files
+```
 
 ## Monitoring and Alerting
 

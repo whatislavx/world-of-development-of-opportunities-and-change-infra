@@ -1,6 +1,6 @@
 variable "aws_region" {
   description = "AWS region for resources"
-  default     = "eu-central-1"
+  default     = "us-east-1"
 }
 
 variable "instance_type" {
