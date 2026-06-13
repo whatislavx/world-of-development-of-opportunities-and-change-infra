@@ -25,5 +25,5 @@
   ansible.builtin.cron:
     name: certbot renewal
     weekday: "{{ certbot_renew_weekday }}"
-    job: "cd {{ project_root }} && certbot renew --post-hook 'docker compose restart nginx'"
+    job: "cd {{ project_root }} && certbot renew --post-hook 'docker compose -f docker-compose.yml restart nginx'"
   when: enable_ssl | bool

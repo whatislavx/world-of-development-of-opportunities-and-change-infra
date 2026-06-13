@@ -11,30 +11,34 @@
   block:
     - name: "Render environment files"
       ansible.builtin.template:
-        src: "{{ item.src }}"
+        src: "{{ playbook_dir }}/templates/{{ item.src }}"
         dest: "{{ project_root }}/{{ item.dest }}"
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
         mode: "0644"
-      loop: "{{ env_files }}"
+      loop:
+        - src: "backend.env.j2"
+          dest: "backend.env"
+        - src: "database.env.j2"
+          dest: "database.env"
 
-    - name: "Copy docker-compose infra config"
-      ansible.builtin.copy:
-        src: "{{ playbook_dir }}/../docker/{{ env_type }}/docker-compose.infra.yml"
-        dest: "{{ project_root }}/docker-compose.infra.yml"
+    - name: "Render nginx config"
+      ansible.builtin.template:
+        src: "{{ playbook_dir }}/templates/nginx.conf.j2"
+        dest: "{{ project_root }}/nginx.conf"
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
         mode: "0644"
 
-    - name: "Copy docker-compose app config"
+    - name: "Copy docker-compose config"
       ansible.builtin.copy:
-        src: "{{ playbook_dir }}/../docker/{{ env_type }}/docker-compose.app.yml"
-        dest: "{{ project_root }}/docker-compose.app.yml"
+        src: "{{ playbook_dir }}/../docker/{{ env_type }}/docker-compose.yml"
+        dest: "{{ project_root }}/docker-compose.yml"
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
         mode: "0644"
 
-    - name: "Copy docker-compose monitoring config"
+    - name: "Copy docker-compose monitoring app override config"
       ansible.builtin.copy:
         src: "{{ playbook_dir }}/../docker/{{ env_type }}/docker-compose.monitoring.yml"
         dest: "{{ project_root }}/docker-compose.monitoring.yml"
@@ -43,17 +47,18 @@
         mode: "0644"
       when: env_type == 'staging'
 
-    - name: "Copy nginx config"
+    - name: "Copy core monitoring infrastructure docker-compose config"
       ansible.builtin.copy:
-        src: "{{ playbook_dir }}/../docker/nginx/nginx.conf"
-        dest: "{{ project_root }}/nginx.conf"
+        src: "{{ playbook_dir }}/../monitoring/docker-compose.yml"
+        dest: "{{ project_root }}/docker-compose.infra-monitoring.yml"
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
         mode: "0644"
+      when: env_type == 'staging'
 
     - name: "Copy monitoring configs (prometheus, alerts, loki, promtail)"
       ansible.builtin.copy:
-        src: "{{ playbook_dir }}/../docker/monitoring/{{ item }}"
+        src: "{{ playbook_dir }}/../monitoring/{{ item }}"
         dest: "{{ project_root }}/{{ item }}"
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
@@ -67,7 +72,7 @@
 
     - name: "Copy Grafana provisioning"
       ansible.builtin.copy:
-        src: "{{ playbook_dir }}/../docker/monitoring/grafana/provisioning/"
+        src: "{{ playbook_dir }}/../monitoring/grafana/provisioning/"
         dest: "{{ project_root }}/grafana/provisioning/"
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
@@ -85,28 +90,32 @@
   ansible.builtin.set_fact:
     compose_service_args: "{{ '' if service_name == 'all' else ' ' ~ service_name }}"
     compose_no_deps: "{{ '' if service_name == 'all' else ' --no-deps' }}"
-    compose_files: "{{ '-f docker-compose.infra.yml -f docker-compose.app.yml' if env_type == 'development' else '-f docker-compose.infra.yml -f docker-compose.app.yml -f docker-compose.monitoring.yml' }}"
+    app_compose_files: "{{ '-f docker-compose.yml' if env_type == 'development' else '-f docker-compose.yml -f docker-compose.monitoring.yml' }}"
+    infra_compose_files: "-f docker-compose.infra-monitoring.yml"
 
-- name: "Docker: Create network"
-  ansible.builtin.command: "docker network create wdoc-network"
-  register: docker_network_create
-  changed_when: docker_network_create.rc == 0
-  failed_when: false
-
-- name: "Deploy: Docker Compose"
+- name: "Deploy: Infrastructure Monitoring (Staging Only)"
   block:
-    - name: "Docker: Capture state"
-      ansible.builtin.shell: "docker compose {{ compose_files }} ps -q"
+    - name: "Docker Infra: Pull and Up core monitoring tools"
+      ansible.builtin.shell: |
+        docker compose {{ infra_compose_files }} pull
+        docker compose {{ infra_compose_files }} up -d --remove-orphans
+      args:
+        chdir: "{{ project_root }}"
+  when: env_type == 'staging'
+
+- name: "Deploy: Application Docker Compose Stack"
+  block:
+    - name: "Docker App: Capture state"
+      ansible.builtin.shell: "docker compose {{ app_compose_files }} ps -q"
       args:
         chdir: "{{ project_root }}"
       register: current_containers
       changed_when: false
       failed_when: false
 
-    - name: "Docker: Capture images for rollback"
-      ansible.builtin.shell:
-        "docker compose {{ compose_files }} ps -q | xargs -I {} docker inspect
-        --format '{{ '{{.Name}}:{{.Image}}' }}' {}"
+    - name: "Docker App: Capture images for rollback"
+      ansible.builtin.shell: |
+        docker compose {{ app_compose_files }} ps -q | xargs -I {} docker inspect --format '{{ '{{' }}.Name{{ '}}' }}:{{ '{{' }}.Image{{ '}}' }}' {}
       args:
         chdir: "{{ project_root }}"
       register: pre_deploy_state
@@ -114,22 +123,22 @@
       changed_when: false
       failed_when: false
 
-    - name: "Docker: Pull and Up (Wait for Health)"
+    - name: "Docker App: Pull and Up (Wait for Health)"
       ansible.builtin.shell: |
-        docker compose {{ compose_files }} pull{{ compose_service_args }}
-        docker compose {{ compose_files }} up -d --remove-orphans{{ compose_no_deps }} --wait --wait-timeout 300{{ compose_service_args }}
+        docker compose {{ app_compose_files }} pull{{ compose_service_args }}
+        docker compose {{ app_compose_files }} up -d --remove-orphans{{ compose_no_deps }} --wait --wait-timeout 300{{ compose_service_args }}
       args:
         chdir: "{{ project_root }}"
 
   rescue:
     - name: "Rollback: Cleanup on first deploy failure"
-      ansible.builtin.shell: "docker compose {{ compose_files }} down"
+      ansible.builtin.shell: "docker compose {{ app_compose_files }} down"
       args:
         chdir: "{{ project_root }}"
       when: current_containers.stdout == ""
 
     - name: "Rollback: Revert to previous stable state"
-      ansible.builtin.shell: "docker compose {{ compose_files }} up -d"
+      ansible.builtin.shell: "docker compose {{ app_compose_files }} up -d"
       args:
         chdir: "{{ project_root }}"
       when: current_containers.stdout != ""

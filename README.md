@@ -18,7 +18,6 @@ This repository combines:
 - [Ansible](#ansible)
 - [CI/CD Workflows](#cicd-workflows)
 - [Runtime Services](#runtime-services)
-- [Local Compose Variants](#local-compose-variants)
 - [Monitoring and Alerting](#monitoring-and-alerting)
 - [Grafana Dashboards](#grafana-dashboards)
 - [SMTP Email](#smtp-email)
@@ -99,19 +98,36 @@ flowchart TD
 |       |-- deploy.yml
 |       `-- infra-provision.yml
 |-- ansible/
-|   |-- deploy.yml
-|   |-- inventory.ini
-|   |-- provision.yml
-|   |-- requirements.yml
 |   |-- roles/
 |   |   |-- app_deploy/
+|   |   |   |-- defaults/
+|   |   |   `-- tasks/
+|   |   |       `-- main.yml
 |   |   |-- host_setup/
 |   |   |-- provision_ssl/
 |   |   `-- server_tuning/
-|   `-- templates/
-|       |-- backend.env.j2
-|       |-- database.env.j2
-|       `-- nginx.env.j2
+|   |-- templates/
+|   |   |-- backend.env.j2
+|   |   |-- database.env.j2
+|   |   `-- nginx.conf.j2
+|   |-- deploy.yml
+|   |-- inventory.ini
+|   |-- provision.yml
+|   `-- requirements.yml
+|-- docker/
+|   |-- development/
+|   |   `-- docker-compose.yml
+|   `-- staging/
+|       |-- docker-compose.monitoring.yml
+|       `-- docker-compose.yml
+|-- monitoring/
+|   |-- grafana/
+|   |   `-- provisioning/
+|   |-- alert-rules.yml
+|   |-- docker-compose.yml
+|   |-- loki-config.yaml
+|   |-- prometheus.yml
+|   `-- promtail-config.yaml
 |-- terraform/
 |   |-- environments/
 |   |   |-- development/
@@ -121,24 +137,8 @@ flowchart TD
 |       |-- database/
 |       |-- network/
 |       `-- storage/
+|-- .gitignore
 |-- ansible.cfg
-|-- docker/
-|   |-- development/
-|   |   |-- docker-compose.infra.yml
-|   |   |-- docker-compose.app.yml
-|   |   `-- docker-compose.monitoring.yml
-|   |-- staging/
-|   |   |-- docker-compose.infra.yml
-|   |   |-- docker-compose.app.yml
-|   |   `-- docker-compose.monitoring.yml
-|   |-- monitoring/
-|   |   |-- loki-config.yaml
-|   |   |-- promtail-config.yaml
-|   |   |-- prometheus.yml
-|   |   `-- grafana/
-|   |       `-- provisioning/
-|   `-- nginx/
-|       `-- nginx.conf
 `-- README.md
 ```
 
@@ -221,9 +221,10 @@ ansible-playbook ansible/provision.yml \
 ### Deployment
 
 `ansible/deploy.yml` uses role `app_deploy`:
-- Renders env files and copies environment-specific compose plus shared nginx config.
-- Pulls and updates services via Docker Compose with healthcheck wait.
-- Performs automatic rollback when service update fails.
+
+- **Dynamic config rendering:** The role dynamically renders environment variables (`backend.env`, `database.env`) and the web server configuration (`nginx.conf`) directly from Jinja2 templates at deploy time, rather than copying static files.
+- **Separate stack orchestration:** For the staging environment, infrastructure concerns are clearly separated — the logging/monitoring stack is brought up in isolation, and application containers are deployed independently.
+- **Image-state rollback:** A mechanism preserves and verifies the previous stable container image state, enabling automatic rollback if healthchecks fail for a new release.
 
 Example deploy:
 
@@ -298,51 +299,18 @@ Environment behavior:
 Nginx routing:
 - `/` -> frontend
 - `/api` and `/admin` -> backend
-- TLS is enabled for both environments via `docker/nginx/nginx.conf`.
+- TLS is enabled for staging via `nginx.conf.j2` rendered at deploy time.
 - Certificates are expected under `/etc/letsencrypt/live/<domain>/`.
-- `SITE_DOMAIN` is injected at runtime via `nginx.env`.
-
-## Local Compose Variants
-
-Local developer workflows — use the compose files included under `docker/` depending on the scenario:
-
-- `docker/local-full/docker-compose.yml` — full local stack (builds frontend + backend locally).
-- `docker/development/docker-compose.app.yml` — app-compose for the development environment (build or pull app images).
-- `docker/development/docker-compose.infra.yml` — infra services for development (redis, nginx, monitoring helpers).
-- `docker/staging/docker-compose.app.yml` and `docker/staging/docker-compose.infra.yml` — staging variants that reference prebuilt images.
-
-For most local development, prefer `docker/local-full/docker-compose.yml` which builds the application images locally; the environment-specific compose files under `docker/development` and `docker/staging` are intended for environment parity and CI use.
-
-Examples:
-
-```sh
-docker compose -f docker/local-full/docker-compose.yml up -d
-```
-
-```sh
-docker compose -f docker/development/docker-compose.app.yml up -d
-```
-
-```sh
-docker compose -f docker/development/docker-compose.infra.yml up -d
-```
-
-Note: create environment files from the templates in `ansible/templates/` (or copy the examples) before bringing the stack up. Example:
-
-```sh
-cp ansible/templates/backend.env.j2 backend.env
-cp ansible/templates/database.env.j2 database.env
-cp ansible/templates/nginx.env.j2 nginx.env
-# then edit values inside the copied files
-```
 
 ## Monitoring and Alerting
 
 Monitoring stack (Prometheus, Grafana, Loki, promtail, node-exporter, cAdvisor, nginx-exporter):
 
 ```sh
-docker compose -f docker/monitoring/docker-compose.yml up -d
+docker compose -f monitoring/docker-compose.yml up -d
 ```
+
+> **Note:** To optimize server resource usage, the monitoring stack (Prometheus, Grafana, Loki, etc.) is managed by Ansible tasks and is deployed **only on the staging environment**. On development, the monitoring infrastructure is fully ignored and not brought up.
 
 Promtail scrapes:
 - Docker container logs: `/var/lib/docker/containers/*/*.log`
@@ -350,7 +318,7 @@ Promtail scrapes:
 
 Grafana provisioning:
 - Datasources are provisioned for Prometheus, Loki, and CloudWatch.
-- Slack contact point is provisioned in `docker/monitoring/grafana/provisioning/alerting/contactpoints.yaml`.
+- Slack contact point is provisioned in `monitoring/grafana/provisioning/alerting/contactpoints.yaml`.
 
 Update the Slack webhook URL before deploying:
 - Replace `${SLACK_WEBHOOK_URL}` with your actual incoming webhook.
