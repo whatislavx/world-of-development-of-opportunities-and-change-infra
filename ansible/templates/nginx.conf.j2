@@ -113,23 +113,15 @@ http {
             add_header Cache-Control "public, immutable";
         }
 
+{% if not use_s3 | bool %}
         location /media/ {
-{% if use_s3 | bool %}
-            proxy_pass https://{{ aws_storage_bucket_name }}.s3.amazonaws.com;
-            proxy_set_header Host {{ aws_storage_bucket_name }}.s3.amazonaws.com;
-
-            proxy_set_header X-Real-IP "";
-            proxy_set_header X-Forwarded-For "";
-            proxy_set_header X-Forwarded-Proto "";
-{% else %}
             alias /app/media/;
             add_header Accept-Ranges bytes;
-{% endif %}
-
             expires 30d;
             access_log off;
             log_not_found off;
             add_header Cache-Control "public, no-transform";
         }
+{% endif %}
     }
 }
