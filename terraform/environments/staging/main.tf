@@ -1,8 +1,6 @@
 locals {
-  environment = "staging"
-
+  environment   = "staging"
   origin_domain = "${var.origin_prefix}.${var.site_domain}"
-
   common_tags = merge(
     var.tags,
     {
@@ -86,11 +84,9 @@ module "database" {
 }
 
 module "acm" {
-  source = "../../modules/acm"
-
-  domain_name     = var.site_domain
-  route53_zone_id = var.route53_zone_id
-  tags            = local.common_tags
+  source      = "../../modules/acm"
+  domain_name = var.site_domain
+  tags        = local.common_tags
 }
 
 module "cdn" {
@@ -98,7 +94,7 @@ module "cdn" {
 
   environment           = local.environment
   site_domain           = var.site_domain
-  nginx_domain          = local.origin_domain
+  nginx_domain          = module.compute.public_dns
   s3_bucket_id          = module.storage.bucket_id
   s3_bucket_arn         = module.storage.bucket_arn
   s3_bucket_domain_name = module.storage.bucket_regional_domain_name
@@ -106,28 +102,4 @@ module "cdn" {
   tags                  = local.common_tags
 
   depends_on = [module.acm]
-}
-
-resource "aws_route53_record" "origin" {
-  count = var.route53_zone_id != "" ? 1 : 0
-
-  zone_id = var.route53_zone_id
-  name    = local.origin_domain
-  type    = "A"
-  ttl     = 300
-  records = [module.compute.public_ip]
-}
-
-resource "aws_route53_record" "site_cdn" {
-  count = var.route53_zone_id != "" ? 1 : 0
-
-  zone_id = var.route53_zone_id
-  name    = var.site_domain
-  type    = "A"
-
-  alias {
-    name                   = module.cdn.distribution_domain_name
-    zone_id                = module.cdn.hosted_zone_id
-    evaluate_target_health = false
-  }
 }
