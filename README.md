@@ -39,63 +39,60 @@ Design goals:
 
 ## Architecture
 
-### Development
+### Provisioning
 
 ```mermaid
 flowchart TD
-    GH[GitHub Actions] --> TF[Terraform]
+    GH[GitHub Actions]
+
+    GH --> TF[Terraform]
     GH --> ANS[Ansible]
 
     TF --> VPC[VPC + Subnets + Routes]
     TF --> EC2[EC2 App Host]
-    TF --> S3[S3 + IAM Instance Profile]
+    TF --> RDS[(RDS PostgreSQL)]
+    TF --> S3[(S3 Media Bucket)]
+    TF --> CDN[CloudFront CDN]
 
     ANS --> HOST[Host Provisioning]
-    ANS --> DEPLOY[App Deployment]
-
-    DEPLOY --> NGINX[Nginx]
-    DEPLOY --> FE[Frontend]
-    DEPLOY --> BE[Backend]
-    DEPLOY --> CEL[Celery Worker]
-    DEPLOY --> REDIS[(Redis)]
-    DEPLOY --> DB[(PostgreSQL Container)]
-    BE --> REDIS
-    CEL --> REDIS
-    CEL --> DB
+    ANS --> NGINX[Nginx + TLS]
 ```
 
-### Staging
+### Runtime
 
 ```mermaid
 flowchart TD
-    User[Users] --> CDN[CloudFront CDN]
-    CDN -->|"/media/*"| S3[S3 Media Bucket]
-    CDN -->|"/*"| NGINX[Nginx + TLS]
+    CDN[CloudFront CDN] --> NGINX[Nginx + TLS]
+
     NGINX --> FE[Frontend]
     NGINX --> BE[Backend]
 
-    GH[GitHub Actions] --> TF[Terraform]
-    GH --> ANS[Ansible]
+    BE --> S3[(S3 Media Bucket)]
+    BE --> RDS[(RDS PostgreSQL)]
+    BE --> CEL[Celery Worker]
 
-    TF --> VPC[VPC + Subnets + Routes]
-    TF --> EC2[EC2 App Host]
-    TF --> S3
-    TF --> RDS[(RDS PostgreSQL)]
-    TF --> CDN
-
-    ANS --> HOST[Host Provisioning]
-    ANS --> DEPLOY[App Deployment]
-
-    DEPLOY --> NGINX
-    DEPLOY --> FE
-    DEPLOY --> BE
-    DEPLOY --> CEL[Celery Worker]
-    DEPLOY --> REDIS[(Redis)]
-    BE -->|upload media| S3
-    BE --> REDIS
-    CEL --> REDIS
-    BE --> RDS
     CEL --> RDS
+    CEL --> REDIS[(Redis)]
+```
+
+### Request flow
+
+```mermaid
+flowchart LR
+    Browser --> CDN[CloudFront CDN]
+
+    CDN -->|/media/*| S3[(S3 Media Bucket)]
+    CDN -->|/*| NGINX[Nginx + TLS]
+
+    NGINX --> FE[Frontend]
+    NGINX --> BE[Backend]
+
+    BE --> S3
+    BE --> RDS[(RDS PostgreSQL)]
+    BE --> CEL[Celery Worker]
+
+    CEL --> RDS
+    CEL --> REDIS[(Redis)]
 ```
 
 ## Repository Structure
@@ -342,18 +339,6 @@ Users never see the EC2 certificate. HTTP requests to `http://<SITE_DOMAIN>` are
 
 CDN origin hostname: `<origin-prefix>.<SITE_DOMAIN>` (default prefix: `origin`). This record must point to the EC2 public IP and must **not** point to CloudFront (avoids an origin loop). `<SITE_DOMAIN>` points to CloudFront.
 
-### Request flow
-
-```mermaid
-flowchart LR
-    Browser -->|"https://<SITE_DOMAIN>/media/..."| CDN[CloudFront]
-    Browser -->|"https://<SITE_DOMAIN>/api/..."| CDN
-    CDN -->|"/media/*"| S3[(Private S3 bucket)]
-    CDN -->|"/*"| Nginx[Nginx on EC2]
-    Nginx --> App[Frontend / Backend]
-    Backend -->|"USE_S3 enabled: upload"| S3
-```
-
 | Path | Origin | Purpose |
 |---|---|---|
 | `/*` (default) | Nginx (EC2) | Frontend, API, admin, static files |
@@ -400,7 +385,7 @@ Terraform variables in `terraform/environments/staging/terraform.tfvars`:
 | `origin_prefix` | `<origin-prefix>` |
 | `route53_zone_id` | `<route53-zone-id>` or empty for manual DNS |
 
-### CDN setup checklist (staging)
+### CDN setup checklist 
 
 1. Apply Terraform:
 
