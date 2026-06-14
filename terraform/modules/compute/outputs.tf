@@ -17,3 +17,8 @@ output "eip_public_ip" {
 output "security_group_id" {
   value = aws_security_group.ec2_sg.id
 }
+
+output "origin_domain_name" {
+  description = "Public DNS hostname for CDN origin (CloudFront does not accept IP addresses)"
+  value       = aws_instance.app.public_dns
+}

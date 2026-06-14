@@ -30,7 +30,7 @@ jobs:
                   options: >-
                       -i ansible/inventory.ini --limit development --extra-vars
                       "env_type=development enable_ssl=true
-                      domain_name=wdoc.pp.ua"
+                      site_domain=${{ vars.SITE_DOMAIN }}"
 
     provision-staging:
         if: github.event.inputs.environment == 'staging' ||
@@ -51,4 +51,5 @@ jobs:
                   options: >-
                       -i ansible/inventory.ini --limit staging --extra-vars
                       "env_type=staging enable_ssl=true
-                      domain_name=stage-wdoc.pp.ua"
+                      site_domain=${{ vars.SITE_DOMAIN }}
+                      origin_domain=origin.${{ vars.SITE_DOMAIN }}"

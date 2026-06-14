@@ -1,24 +1,46 @@
-- name: Require domain name when SSL is enabled
+---
+- name: Require site domain when SSL is enabled
   ansible.builtin.assert:
     that:
-      - domain_name | length > 0
-    fail_msg: domain_name must be provided when enable_ssl=true
+      - site_domain | length > 0
+    fail_msg: site_domain must be provided when enable_ssl=true
+  when: enable_ssl | bool
+
+- name: Ensure LetsEncrypt live directory exists
+  ansible.builtin.file:
+    path: "/etc/letsencrypt/live/{{ site_domain }}"
+    state: directory
+    mode: "0755"
   when: enable_ssl | bool
 
 - name: Check SSL certificate exists
   ansible.builtin.stat:
-    path: "/etc/letsencrypt/live/{{ domain_name }}/fullchain.pem"
+    path: "/etc/letsencrypt/live/{{ site_domain }}/fullchain.pem"
   register: ssl_certificate
   when: enable_ssl | bool
 
-- name: Generate SSL certificate for the first time
+- name: Generate Self-Signed SSL certificate for CloudFront Origin
+  ansible.builtin.command:
+    cmd: >-
+      openssl req -x509 -nodes -days 3650 -newkey rsa:2048
+      -keyout /etc/letsencrypt/live/{{ site_domain }}/privkey.pem
+      -out /etc/letsencrypt/live/{{ site_domain }}/fullchain.pem
+      -subj "/CN={{ site_domain }}"
+  when:
+    - enable_ssl | bool
+    - use_cloudfront | bool
+    - not ssl_certificate.stat.exists
+
+- name: Generate Let's Encrypt SSL certificate for standalone host
   ansible.builtin.command:
     cmd: >-
       certbot certonly --standalone
-      -d {{ domain_name }}
+      -d {{ site_domain }}
+      {% if origin_domain | default('') | length > 0 %}-d {{ origin_domain }}{% endif %}
       --agree-tos --non-interactive --register-unsafely-without-email
   when:
     - enable_ssl | bool
+    - not use_cloudfront | bool
     - not ssl_certificate.stat.exists
 
 - name: Configure certbot renewal cron
@@ -26,4 +48,6 @@
     name: certbot renewal
     weekday: "{{ certbot_renew_weekday }}"
     job: "cd {{ project_root }} && certbot renew --post-hook 'docker compose -f docker-compose.yml restart nginx'"
-  when: enable_ssl | bool
+  when:
+    - enable_ssl | bool
+    - not use_cloudfront | bool

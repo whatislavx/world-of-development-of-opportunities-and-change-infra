@@ -1,5 +1,10 @@
+---
 project_root: "/home/{{ ansible_user }}/app"
-env_type: development
+env_type: "development"
 enable_ssl: true
-domain_name: "wdoc.pp.ua"
+use_cloudfront: false
+
+site_domain: "wdoc.pp.ua"
+origin_domain: ""
+
 certbot_renew_weekday: "1"

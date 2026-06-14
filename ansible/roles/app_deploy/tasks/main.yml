@@ -45,7 +45,7 @@
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
         mode: "0644"
-      when: env_type == 'staging'
+      when: enable_monitoring | bool
 
     - name: "Copy core monitoring infrastructure docker-compose config"
       ansible.builtin.copy:
@@ -54,7 +54,7 @@
         owner: "{{ ansible_user }}"
         group: "{{ ansible_user }}"
         mode: "0644"
-      when: env_type == 'staging'
+      when: enable_monitoring | bool
 
     - name: "Copy monitoring configs (prometheus, alerts, loki, promtail)"
       ansible.builtin.copy:
@@ -68,7 +68,7 @@
         - alert-rules.yml
         - loki-config.yaml
         - promtail-config.yaml
-      when: env_type == 'staging'
+      when: enable_monitoring | bool
 
     - name: "Copy Grafana provisioning"
       ansible.builtin.copy:
@@ -78,7 +78,7 @@
         group: "{{ ansible_user }}"
         mode: "0644"
         directory_mode: "0755"
-      when: env_type == 'staging'
+      when: enable_monitoring | bool
 
 - name: "Deploy: Validate service selection"
   ansible.builtin.assert:
@@ -90,10 +90,10 @@
   ansible.builtin.set_fact:
     compose_service_args: "{{ '' if service_name == 'all' else ' ' ~ service_name }}"
     compose_no_deps: "{{ '' if service_name == 'all' else ' --no-deps' }}"
-    app_compose_files: "{{ '-f docker-compose.yml' if env_type == 'development' else '-f docker-compose.yml -f docker-compose.monitoring.yml' }}"
+    app_compose_files: "{{ '-f docker-compose.yml -f docker-compose.monitoring.yml' if enable_monitoring | bool else '-f docker-compose.yml' }}"
     infra_compose_files: "-f docker-compose.infra-monitoring.yml"
 
-- name: "Deploy: Infrastructure Monitoring (Staging Only)"
+- name: "Deploy: Infrastructure Monitoring"
   block:
     - name: "Docker Infra: Pull and Up core monitoring tools"
       ansible.builtin.shell: |
@@ -101,7 +101,7 @@
         docker compose {{ infra_compose_files }} up -d --remove-orphans
       args:
         chdir: "{{ project_root }}"
-  when: env_type == 'staging'
+  when: enable_monitoring | bool
 
 - name: "Deploy: Application Docker Compose Stack"
   block:

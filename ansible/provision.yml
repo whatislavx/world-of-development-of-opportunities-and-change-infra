@@ -6,7 +6,8 @@
     project_root: "/home/{{ ansible_user }}/app"
     env_type: "{{ env_type | default('development') }}"
     enable_ssl: "{{ enable_ssl | default(true) }}"
-    domain_name: "{{ domain_name | default('') }}"
+    site_domain: "{{ site_domain | default('') }}"
+    origin_domain: "{{ origin_domain | default('') }}"
 
   roles:
     - role: server_tuning

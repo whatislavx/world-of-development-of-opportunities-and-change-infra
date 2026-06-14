@@ -1,16 +1,18 @@
+---
 project_root: "/home/{{ ansible_user }}/app"
-env_type: development
-service_name: backend
+env_type: "development"
+service_name: "all"
 
-supported_env_types:
-  - development
-  - staging
+enable_monitoring: false
 
 updatable_services:
   - frontend
   - backend
 
+supported_env_types:
+  - development
+  - staging
+
 env_files:
-  - { src: "{{ playbook_dir }}/templates/backend.env.j2", dest: "backend.env" }
-  - { src: "{{ playbook_dir }}/templates/database.env.j2", dest: "database.env" }
-  - { src: "{{ playbook_dir }}/templates/nginx.env.j2", dest: "nginx.env" }
+  - { src: "backend.env.j2", dest: "backend.env" }
+  - { src: "database.env.j2", dest: "database.env" }

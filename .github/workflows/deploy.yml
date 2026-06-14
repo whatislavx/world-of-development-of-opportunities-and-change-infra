@@ -89,9 +89,6 @@ jobs:
                           \"debug\": \"${{ env.ENVIRONMENT == 'development' && 'True' || 'False' }}\",
 
                           \"dockerhub_user\": \"${{ vars.DOCKERHUB_USERNAME || 'example_user' }}\",
-                          \"frontend_url\": \"${{ vars.FRONTEND_URL || 'http://localhost:3000' }}\",
-                          \"allowed_hosts\": \"${{ vars.ALLOWED_HOSTS || 'localhost' }}\",
-                          \"csrf_trusted_origins\": \"${{ vars.CSRF_TRUSTED_ORIGINS || 'http://localhost:3000' }}\",
                           \"email_host\": \"${{ vars.EMAIL_HOST || 'smtp.example.com' }}\",
                           \"email_port\": \"${{ vars.EMAIL_PORT || '587' }}\",
                           \"email_use_tls\": \"${{ vars.EMAIL_USE_TLS || 'true' }}\",

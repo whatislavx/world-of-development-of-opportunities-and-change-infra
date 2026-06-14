@@ -1,5 +1,15 @@
 locals {
   environment = "staging"
+
+  origin_domain = "${var.origin_prefix}.${var.site_domain}"
+
+  common_tags = merge(
+    var.tags,
+    {
+      Environment = local.environment
+      Project     = "TeamProject225"
+    }
+  )
 }
 
 module "network" {
@@ -29,13 +39,7 @@ module "storage" {
   iam_role_name                  = var.iam_role_name
   iam_policy_name                = var.iam_policy_name
   additional_managed_policy_arns = var.additional_managed_policy_arns
-  tags = merge(
-    var.tags,
-    {
-      Environment = local.environment
-      Project     = "TeamProject225"
-    }
-  )
+  tags                           = local.common_tags
 }
 
 module "compute" {
@@ -78,11 +82,52 @@ module "database" {
   skip_final_snapshot     = var.db_skip_final_snapshot
   publicly_accessible     = var.db_publicly_accessible
   deletion_protection     = var.db_deletion_protection
-  tags = merge(
-    var.tags,
-    {
-      Environment = local.environment
-      Project     = "TeamProject225"
-    }
-  )
+  tags                    = local.common_tags
+}
+
+module "acm" {
+  source = "../../modules/acm"
+
+  domain_name     = var.site_domain
+  route53_zone_id = var.route53_zone_id
+  tags            = local.common_tags
+}
+
+module "cdn" {
+  source = "../../modules/cdn"
+
+  environment           = local.environment
+  site_domain           = var.site_domain
+  nginx_domain          = local.origin_domain
+  s3_bucket_id          = module.storage.bucket_id
+  s3_bucket_arn         = module.storage.bucket_arn
+  s3_bucket_domain_name = module.storage.bucket_regional_domain_name
+  acm_certificate_arn   = module.acm.certificate_arn
+  tags                  = local.common_tags
+
+  depends_on = [module.acm]
+}
+
+resource "aws_route53_record" "origin" {
+  count = var.route53_zone_id != "" ? 1 : 0
+
+  zone_id = var.route53_zone_id
+  name    = local.origin_domain
+  type    = "A"
+  ttl     = 300
+  records = [module.compute.public_ip]
+}
+
+resource "aws_route53_record" "site_cdn" {
+  count = var.route53_zone_id != "" ? 1 : 0
+
+  zone_id = var.route53_zone_id
+  name    = var.site_domain
+  type    = "A"
+
+  alias {
+    name                   = module.cdn.distribution_domain_name
+    zone_id                = module.cdn.hosted_zone_id
+    evaluate_target_health = false
+  }
 }

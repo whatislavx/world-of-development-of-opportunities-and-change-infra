@@ -251,3 +251,21 @@ variable "tags" {
   default     = {}
 }
 
+variable "site_domain" {
+  description = "Public staging site domain"
+  type        = string
+  default     = "stage-wdoc.pp.ua"
+}
+
+variable "origin_prefix" {
+  description = "Subdomain prefix for the CDN origin hostname (<prefix>.<site_domain> → EC2)"
+  type        = string
+  default     = "origin"
+}
+
+variable "route53_zone_id" {
+  description = "Route53 hosted zone ID for ACM validation and DNS records. Leave empty for manual DNS setup."
+  type        = string
+  default     = ""
+}
+
